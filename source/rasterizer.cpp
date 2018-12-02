@@ -71,23 +71,27 @@ void forwardRenderingPipeline(Camera cam) {
         // Don't forget te deallocate
         Model* model = new Model();
         model = &models[i];
+        
         // Traverse model's transformations
-        for(int j = 0 ;j < model -> numberOfTriangles;j++)
+        for(int j = 0 ;j < model -> numberOfTriangles; j++)
         {   
+            // pointer for triangle, we want to change this triangle in functions
+            // Don't forget te deallocate
+            
+            Triangle* triangle = new Triangle();
+            triangle = &(model -> triangles[j]);
+
             //Traverse model's triangles
-            for(int k = 0 ; k < model -> numberOfTransformations ;k++)
+            for(int k = 0 ; k < model -> numberOfTransformations; k++)
             {
-                // pointer for triangle, we want to change this triangle in functions
-                // Don't forget te deallocate
-                Triangle* triangle = new Triangle();
-                triangle = &(model -> triangles[j]);
-                
+                 
                 // transform id of
                 int transform_id = model -> transformationIDs[k];
                 //transformation type (rotation,scale,translate)
                 char type = model -> transformationTypes[k];
                 
-                // 1 ) Transform  vertices (pipeline 2.step)
+                // 1) VERTEX PROCESSING (Pipeline 1.step)
+                // a ) MODELING TRANSFORMATION
                 
                 // If translation
                 if(type == 't')
@@ -111,6 +115,11 @@ void forwardRenderingPipeline(Camera cam) {
                     scale_triangle(triangle,scaling);
                 }
 
+                // b) CAMERA TRANSFORMATION
+
+                // c) PROJECTION TRANSFORMATION
+
+                // 2) CULLING (Pipeline 3.step)
                 // Do culling if backfaced culling is enabled
                 if(backfaceCullingSetting == 1)
                 {
@@ -121,6 +130,15 @@ void forwardRenderingPipeline(Camera cam) {
 
                     }
                 }
+
+                // 3) VIEWPORT TRANSFORMATION (Pipeline 4.step)
+
+
+                // 4) TRIANGLE RASTERIZATION (Pipeline 5.step)
+
+
+                // FINISH HIM
+
            
             }
         }
