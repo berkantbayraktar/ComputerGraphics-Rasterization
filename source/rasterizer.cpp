@@ -72,22 +72,23 @@ void forwardRenderingPipeline(Camera cam) {
         Model* model = new Model();
         model = &models[i];
         // Traverse model's transformations
-        for(int j = 0 ; j < model -> numberOfTransformations ;j++)
+        for(int j = 0 ;j < model -> numberOfTriangles;j++)
         {   
             //Traverse model's triangles
-            for(int z = 0 ;z < model -> numberOfTriangles;z++)
+            for(int k = 0 ; k < model -> numberOfTransformations ;k++)
             {
                 // pointer for triangle, we want to change this triangle in functions
                 // Don't forget te deallocate
                 Triangle* triangle = new Triangle();
-                triangle = &(model -> triangles[z]);
+                triangle = &(model -> triangles[j]);
                 
                 // transform id of
-                int transform_id = model -> transformationIDs[j];
+                int transform_id = model -> transformationIDs[k];
                 //transformation type (rotation,scale,translate)
-                char type = model -> transformationTypes[j];
+                char type = model -> transformationTypes[k];
                 
-                // Transform  vertices (pipeline 2.step)
+                // 1 ) Transform  vertices (pipeline 2.step)
+                
                 // If translation
                 if(type == 't')
                 {   
@@ -116,11 +117,11 @@ void forwardRenderingPipeline(Camera cam) {
                     bool cull = cull_triangle(triangle);
                     if(cull == 1)
                     {
-                        //TO DO  extunguish triangle
+                        //TO DO : Extunguish triangle
 
                     }
                 }
-            
+           
             }
         }
     }
