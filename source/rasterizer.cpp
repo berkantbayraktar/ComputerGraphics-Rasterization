@@ -41,6 +41,7 @@ Color **image;
 void translate_triangle(Triangle* triangle,Translation translation);
 void rotate_triangle(Triangle * triangle,Rotation rotation);
 void scale_triangle(Triangle* triangle,Scaling scaling);
+bool cull_triangle(Triangle* triangle);
 
 /*
 	Initializes image with background color
@@ -85,6 +86,8 @@ void forwardRenderingPipeline(Camera cam) {
                 int transform_id = model -> transformationIDs[j];
                 //transformation type (rotation,scale,translate)
                 char type = model -> transformationTypes[j];
+                
+                // Transform  vertices (pipeline 2.step)
                 // If translation
                 if(type == 't')
                 {   
@@ -106,10 +109,26 @@ void forwardRenderingPipeline(Camera cam) {
                     Scaling scaling =  scalings[transform_id - 1];
                     scale_triangle(triangle,scaling);
                 }
+
+                // Do culling if backfaced culling is enabled
+                if(backfaceCullingSetting == 1)
+                {
+                    bool cull = cull_triangle(triangle);
+                    if(cull == 1)
+                    {
+                        //TO DO  extunguish triangle
+
+                    }
+                }
             
             }
         }
     }
+
+}
+
+bool cull_triangle(Triangle* triangle)
+{
 
 }
 
