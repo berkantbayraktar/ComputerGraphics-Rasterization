@@ -46,6 +46,8 @@ void cam_transform(Triangle *triangle , double M_cam[4][4]);
 void per_transform(Triangle *triangle , double M_per[4][4]);
 void per_divide(Triangle *triangle);
 void vp_transform(Triangle *triangle , double M_vp[3][4]);
+void midpoint(Triangle *triangle);
+void fill_inside(Triangle *triangle);
 
 /*
 	Initializes image with background color
@@ -171,21 +173,38 @@ void forwardRenderingPipeline(Camera cam) {
 
                     }
                 }
-
                 // 3) VIEWPORT TRANSFORMATION (Pipeline 4.step)
                     vp_transform(triangle,M_vp);
 
                 // 4) TRIANGLE RASTERIZATION (Pipeline 5.step)
 
+                    // a ) MIDPOINT ALGORITHM
+                    midpoint(triangle);
+                    
+                    // IF SOLID FRAME : Use triangle barycentric 
+                    // coordinates to fill triangle's inside
+                    if(model -> type == 1)
+                    {                    
+                        fill_inside(triangle);
+                    }
 
                 // FINISH HIM
-
-           
+                delete triangle;
             }
+            delete model;
         }
     }
 }
 
+void midpoint(Triangle *triangle)
+{
+
+}
+
+void fill_inside(Triangle *triangle)
+{
+
+}
 
 void vp_transform(Triangle *triangle , double M_vp[3][4])
 {
