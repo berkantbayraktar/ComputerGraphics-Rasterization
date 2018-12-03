@@ -42,10 +42,11 @@ void translate_triangle(Triangle* triangle,Translation translation);
 void rotate_triangle(Triangle * triangle,Rotation rotation);
 void scale_triangle(Triangle* triangle,Scaling scaling);
 bool cull_triangle(Triangle* triangle);
-void cam_transform(Triangle *triangle , double M_cam[4][4]);
-void per_transform(Triangle *triangle , double M_per[4][4]);
-void per_divide(Triangle *triangle);
-void vp_transform(Triangle *triangle , double M_vp[3][4]);
+//void cam_transform(Triangle *triangle , double M_cam[4][4]);
+//void per_transform(Triangle *triangle, double M_per_cam[4][4]);
+void per_cam_transform(Triangle *triangle, double M_per_cam[4][4]);
+//void per_divide(Triangle *triangle);
+void vp_transform(Triangle *triangle, double M_vp[3][4]);
 void midpoint(Triangle *triangle);
 void fill_inside(Triangle *triangle);
 
@@ -95,6 +96,12 @@ void forwardRenderingPipeline(Camera cam) {
                     { 0 , 0 , -(f+n)/(f-n) , -(2*f*n) /(f-n)},
                     { 0 , 0 , -1 ,0 }};
 
+    // Make perspective and camera transformation together
+    double M_per_cam[4][4];
+
+    // M_per_cam is handling both perspective and camera transformation
+    multiplyMatrixWithMatrix(M_per_cam,M_per,M_cam);
+
     // Viewport transformation matrix
     double M_vp[3][4] = { { n_x/2 , 0 , 0 , (n_x-1)/2 },
                     { 0 , n_y/2 , 0 , (n_y-1)/2 },
@@ -105,18 +112,14 @@ void forwardRenderingPipeline(Camera cam) {
     for(int i = 0; i < numberOfModels;i++)
     {   
         // pointer for model, we want to change this model in functions
-        // Don't forget te deallocate
-        Model* model = new Model();
-        model = &models[i];
+        Model* model = &(models[i]);
         
         // Traverse model's transformations
         for(int j = 0 ;j < model -> numberOfTriangles; j++)
         {   
             // pointer for triangle, we want to change this triangle in functions
-            // Don't forget te deallocate
             
-            Triangle* triangle = new Triangle();
-            triangle = &(model -> triangles[j]);
+            Triangle* triangle = &(model -> triangles[j]);
 
             //Traverse model's triangles
             for(int k = 0 ; k < model -> numberOfTransformations; k++)
@@ -153,14 +156,19 @@ void forwardRenderingPipeline(Camera cam) {
                 }
 
                 // b) CAMERA TRANSFORMATION
-                    cam_transform(triangle,M_cam);
+                    //cam_transform(triangle,M_cam);
 
                 // c) PERSPECTIVE TRANSFORMATION
-                    per_transform(triangle,M_per);
-                
-                // d) PERSPECTIVE DIVIDE 
-                    per_divide(triangle);
+                    //per_transform(triangle,M_per);
 
+                // d) PERSPECTIVE DIVIDE 
+                    //per_divide(triangle);
+
+                // Make camera ,perspective transformation and perspective 
+                // dividing together
+
+                    per_cam_transform(triangle,M_per_cam);
+                
                 // 2) CULLING (Pipeline 3.step)
                 
                 // Do culling if backfaced culling is enabled
@@ -189,19 +197,134 @@ void forwardRenderingPipeline(Camera cam) {
                     }
 
                 // FINISH HIM
-                delete triangle;
-            }
-            delete model;
+                
+            }      
         }
     }
 }
 
-void midpoint(Triangle *triangle)
-{
+void translate_triangle(Triangle* triangle,Translation translation)
+{   
+    double M[4][4] = {{ 1 ,0 , 0 , translation.tx },
+                    {0 , 1 , 0 , translation.ty },
+                    {0 , 0 , 1 , translation.tz },
+                    {0 , 0 , 0 , 1}};
 
+    Vec3 a = vertices[triangle -> vertexIds[0] - 1];
+    Vec3 b = vertices[triangle -> vertexIds[1] - 1];
+    Vec3 c = vertices[triangle -> vertexIds[2] - 1];
+
+    // Make vertices homogenous
+    double a_h[4] = { a.x , a.y , a.z , 1 };
+    double b_h[4] = { b.x , b.y , b.z , 1 };
+    double c_h[4] = { c.x , c.y , c.z , 1 };
+
+    // Create array to store result
+    double a_res[4],b_res[4],c_res[4];
+
+    // Multiply each vertex with transformation matrix
+    // and store result in dummy arrays
+    multiplyMatrixWithVec4d(a_res,M,a_h);
+    multiplyMatrixWithVec4d(b_res,M,b_h);
+    multiplyMatrixWithVec4d(c_res,M,c_h);
+
+    // crop homogenous parts from result
+    a.x = a_res[0]; a.y = a_res[1]; a.z = a_res[2];
+    b.x = b_res[0]; b.y = b_res[1]; b.z = b_res[2];
+    c.x = c_res[0]; c.y = c_res[1]; c.z = c_res[2];
+
+    // Put transformed vertices 
+    vertices[triangle -> vertexIds[0] - 1] = a;
+    vertices[triangle -> vertexIds[1] - 1] = b;
+    vertices[triangle -> vertexIds[2] - 1] = c;
+}
+// Rotation is little messy. Do it later
+void rotate_triangle(Triangle * triangle,Rotation rotation)
+{   
+    // Use alternativ method for rotating
 }
 
-void fill_inside(Triangle *triangle)
+
+void scale_triangle(Triangle* triangle,Scaling scaling)
+{   
+
+    // Transform matrix for scaling
+    double M[4][4] = {{ scaling.sx , 0 , 0 , 0 },
+                    { 0 , scaling.sy , 0 , 0 },
+                    { 0 , 0 , scaling.sz , 0},
+                    { 0 , 0 , 0 , 1}};
+
+    Vec3 a = vertices[triangle -> vertexIds[0] - 1];
+    Vec3 b = vertices[triangle -> vertexIds[1] - 1];
+    Vec3 c = vertices[triangle -> vertexIds[2] - 1];
+
+    // Make vertices homogenous
+    double a_h[4] = { a.x , a.y , a.z , 1 };
+    double b_h[4] = { b.x , b.y , b.z , 1 };
+    double c_h[4] = { c.x , c.y , c.z , 1 };
+
+    // Create array to store result
+    double a_res[4],b_res[4],c_res[4];
+
+    // Multiply each vertex with transformation matrix
+    // and store result in dummy arrays
+    multiplyMatrixWithVec4d(a_res,M,a_h);
+    multiplyMatrixWithVec4d(b_res,M,b_h);
+    multiplyMatrixWithVec4d(c_res,M,c_h);
+
+    // crop homogenous parts from result
+    a.x = a_res[0]; a.y = a_res[1]; a.z = a_res[2];
+    b.x = b_res[0]; b.y = b_res[1]; b.z = b_res[2];
+    c.x = c_res[0]; c.y = c_res[1]; c.z = c_res[2];
+
+    // Put transformed vertices 
+    vertices[triangle -> vertexIds[0] - 1] = a;
+    vertices[triangle -> vertexIds[1] - 1] = b;
+    vertices[triangle -> vertexIds[2] - 1] = c;
+}
+
+// perspective dividing,perspective transformation,camera transformation altogether 
+void per_cam_transform(double dividend[3], Triangle *triangle , double M_per_cam[4][4])
+{
+    Vec3 a = vertices[triangle -> vertexIds[0] - 1];
+    Vec3 b = vertices[triangle -> vertexIds[1] - 1];
+    Vec3 c = vertices[triangle -> vertexIds[2] - 1];
+
+    // Make vertices homogenous
+    double a_h[4] = { a.x , a.y , a.z , 1 };
+    double b_h[4] = { b.x , b.y , b.z , 1 };
+    double c_h[4] = { c.x , c.y , c.z , 1 };
+
+    // Create array to store result
+    double a_res[4],b_res[4],c_res[4];
+
+    // Multiply each vertex with  transformation matrix
+    // and store result in dummy arrays
+    multiplyMatrixWithVec4d(a_res,M_per_cam,a_h);
+    multiplyMatrixWithVec4d(b_res,M_per_cam,b_h);
+    multiplyMatrixWithVec4d(c_res,M_per_cam,c_h);
+
+    // Store homogenous parts  for perspective dividing
+    double divide_a = a_res[3];
+    double divide_b = b_res[3];
+    double divide_c = c_res[3];
+
+
+    // crop homogenous parts from result
+    // and perform perspective dividing
+    a.x = a_res[0] / divide_a ; a.y = a_res[1] / divide_a; a.z = a_res[2] / divide_a;
+    b.x = b_res[0] / divide_b; b.y = b_res[1] / divide_b; b.z = b_res[2] / divide_b;
+    c.x = c_res[0] / divide_c; c.y = c_res[1] / divide_c; c.z = c_res[2] / divide_c;
+
+
+
+    // Put transformed vertices 
+    vertices[triangle -> vertexIds[0] - 1] = a;
+    vertices[triangle -> vertexIds[1] - 1] = b;
+    vertices[triangle -> vertexIds[2] - 1] = c;
+}
+
+bool cull_triangle(Triangle* triangle)
 {
 
 }
@@ -211,41 +334,26 @@ void vp_transform(Triangle *triangle , double M_vp[3][4])
 
 }
 
-void cam_transform(Triangle *triangle , double M_cam[4][4])
+void midpoint(Triangle *triangle)
 {
+   
 
 }
 
-void per_transform(Triangle *triangle , double M_per[4][4])
-{
-
-}
-
-void per_divide(Triangle *triangle)
-{
-
-}
-
-bool cull_triangle(Triangle* triangle)
-{
-
-}
-
-void translate_triangle(Triangle* triangle,Translation translation)
-{
-
-}
-
-void rotate_triangle(Triangle * triangle,Rotation rotation)
+void fill_inside(Triangle *triangle)
 {
 
 }
 
 
-void scale_triangle(Triangle* triangle,Scaling scaling)
-{
 
-}
+
+
+
+
+
+
+
 
 
 
