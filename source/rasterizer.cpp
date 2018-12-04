@@ -8,7 +8,7 @@
 #include <iostream>
 
 
-Camera cameras[100];
+Camera  cameras[100];
 int numberOfCameras = 0;
 
 Model models[1000];
