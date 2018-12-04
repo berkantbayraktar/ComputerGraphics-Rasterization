@@ -47,7 +47,7 @@ void scale_triangle(Triangle* triangle,Scaling scaling);
 //void per_transform(Triangle *triangle, double M_per_cam[4][4]);
 void per_cam_transform(Triangle *triangle, double M_per_cam[4][4]);
 //void per_divide(Triangle *triangle);
-bool cull_triangle(Triangle* triangle);
+bool cull_triangle(Triangle* triangle, Vec3 cam_pos);
 void vp_transform(Triangle *triangle, double M_vp[3][4]);
 void midpoint(Triangle *triangle);
 void fill_inside(Triangle *triangle);
