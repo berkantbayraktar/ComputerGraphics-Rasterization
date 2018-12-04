@@ -249,16 +249,16 @@ void rotate_triangle(Triangle * triangle,Rotation rotation)
 
     // Make smallest one zero while converting to v
     // If ux is smallest
-    if(abs(rotation.ux) < abs(rotation.uy) && abs(rotation.ux) < abs(rotation.uz))
+    if(abs(rotation.ux) <= abs(rotation.uy) && abs(rotation.ux) <= abs(rotation.uz))
     {   
         // Make smallest one zero
         v.x = 0;
         // Swap and negate one of them
-        v.y = - rotation.uz;
+        v.y = -rotation.uz;
         v.z = rotation.uy;
     }
     // If u_y is smallest
-    else if(abs(rotation.uy) < abs(rotation.ux) && abs(rotation.uy) < abs(rotation.uz))
+    else if(abs(rotation.uy) <= abs(rotation.ux) && abs(rotation.uy) <= abs(rotation.uz))
     {
         // Make smallest one zero
         v.y = 0;
@@ -267,7 +267,7 @@ void rotate_triangle(Triangle * triangle,Rotation rotation)
         v.z = rotation.ux;
     }
     // If u_z is smallest
-    else if(abs(rotation.uz) < abs(rotation.uy) && abs(rotation.uz) < abs(rotation.ux))
+    else if(abs(rotation.uz) <= abs(rotation.uy) && abs(rotation.uz) <= abs(rotation.ux))
     {
         // Make smallest one zero
         v.z = 0;
@@ -425,6 +425,7 @@ void per_cam_transform(Triangle *triangle , double M_per_cam[4][4])
 
 bool cull_triangle(Triangle* triangle)
 {
+
 
 }
 
