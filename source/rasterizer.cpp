@@ -176,8 +176,8 @@ void forwardRenderingPipeline(Camera cam) {
                 // Do culling if backfaced culling is enabled
                 if(backfaceCullingSetting == 1)
                 {
-                    bool cull = cull_triangle(triangle);
-                    if(cull == 1)
+                    
+                    if(cull_triangle(triangle))
                     {
                         // Pass triangle
                         // Don't draw
