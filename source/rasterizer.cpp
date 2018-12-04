@@ -103,8 +103,8 @@ void forwardRenderingPipeline(Camera cam) {
     multiplyMatrixWithMatrix(M_per_cam,M_per,M_cam);
 
     // Viewport transformation matrix
-    double M_vp[3][4] = { { n_x/2 , 0 , 0 , (n_x-1)/2 },
-                    { 0 , n_y/2 , 0 , (n_y-1)/2 },
+    double M_vp[3][4] = { { n_x * 0.5 , 0 , 0 , (n_x-1) * 0.5 },
+                    { 0 , n_y * 0.5 , 0 , (n_y-1) * 0.5 },
                     {0 ,0 , 0.5 , 0.5} };
 
               
@@ -415,8 +415,6 @@ void per_cam_transform(Triangle *triangle , double M_per_cam[4][4])
     b.x = b_res[0] / divide_b; b.y = b_res[1] / divide_b; b.z = b_res[2] / divide_b;
     c.x = c_res[0] / divide_c; c.y = c_res[1] / divide_c; c.z = c_res[2] / divide_c;
 
-
-
     // Put transformed vertices 
     vertices[triangle -> vertexIds[0] - 1] = a;
     vertices[triangle -> vertexIds[1] - 1] = b;
@@ -430,6 +428,33 @@ bool cull_triangle(Triangle* triangle)
 
 void vp_transform(Triangle *triangle , double M_vp[3][4])
 {
+    Vec3 a = vertices[triangle -> vertexIds[0] - 1];
+    Vec3 b = vertices[triangle -> vertexIds[1] - 1];
+    Vec3 c = vertices[triangle -> vertexIds[2] - 1];
+
+    // Make vertices homogenous
+    double a_h[4] = { a.x , a.y , a.z , 1 };
+    double b_h[4] = { b.x , b.y , b.z , 1 };
+    double c_h[4] = { c.x , c.y , c.z , 1 };
+
+    // Create array to store result
+    double a_res[3],b_res[3],c_res[3];
+
+    // Multiply each vertex with  transformation matrix
+    // and store result in dummy arrays
+    multiplyMatrixWithVec4d(a_res,M_vp,a_h);
+    multiplyMatrixWithVec4d(b_res,M_vp,b_h);
+    multiplyMatrixWithVec4d(c_res,M_vp,c_h);
+
+    // Assign result to vertex
+    a.x = a_res[0]; a.y = a_res[1]; a.z = a_res[2];
+    b.x = b_res[0]; b.y = b_res[1]; b.z = b_res[2];
+    c.x = c_res[0]; c.y = c_res[1]; c.z = c_res[2];
+
+    // Put transformed vertices 
+    vertices[triangle -> vertexIds[0] - 1] = a;
+    vertices[triangle -> vertexIds[1] - 1] = b;
+    vertices[triangle -> vertexIds[2] - 1] = c;
 
 }
 
@@ -444,6 +469,18 @@ void fill_inside(Triangle *triangle)
 
 }
 
+// Multiplication function for Matrix[3][4] with Vec4d
+// It is needed for viewpoer transformation
+void mat_mul_with_vec4d(double r[3], double m[3][4], double v[4]) {
+    int i, j;
+    double total;
+    for (i = 0; i < 3; i++) {
+        total = 0;
+        for (j = 0; j < 4; j++)
+            total += m[i][j] * v[j];
+        r[i] = total;
+    }
+}
 
 
 
