@@ -179,7 +179,9 @@ void forwardRenderingPipeline(Camera cam) {
                     bool cull = cull_triangle(triangle);
                     if(cull == 1)
                     {
-                        //TO DO : Extunguish triangle
+                        // Pass triangle
+                        // Don't draw
+                        continue;
 
                     }
                 }
