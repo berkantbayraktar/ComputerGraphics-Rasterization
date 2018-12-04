@@ -426,7 +426,6 @@ void per_cam_transform(Triangle *triangle , double M_per_cam[4][4])
 bool cull_triangle(Triangle* triangle)
 {
 
-
 }
 
 void vp_transform(Triangle *triangle , double M_vp[3][4])
