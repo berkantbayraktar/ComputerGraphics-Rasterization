@@ -436,7 +436,7 @@ bool cull_triangle(Triangle* triangle, Vec3 cam_pos)
     //calculate surface normal of triangle n = (a-mid) X (b- mid)
     Vec3 surface_normal = crossProductVec3(subtractVec3(a,mid),subtractVec3(b,mid)); 
 
-    if(dotProductVec3(surface_normal,subtractVec3(mid,surface_normal)) > 0 )
+    if(dotProductVec3(surface_normal,subtractVec3(mid,cam_pos)) > 0 )
         return true;
     else
         return false;
@@ -476,7 +476,7 @@ void vp_transform(Triangle *triangle , double M_vp[3][4])
 
 void midpoint(Triangle *triangle)
 {
-   
+
 
 }
 
