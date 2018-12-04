@@ -120,7 +120,7 @@ void forwardRenderingPipeline(Camera cam) {
         for(int j = 0 ;j < model -> numberOfTriangles; j++)
         {   
             // pointer for triangle, we want to change this triangle in functions
-            
+           
             Triangle* triangle = &(model -> triangles[j]);
 
             //Traverse model's triangles
@@ -134,20 +134,20 @@ void forwardRenderingPipeline(Camera cam) {
                 
                 // 1) VERTEX PROCESSING (Pipeline 1.step)
                 // a ) MODELING TRANSFORMATION
-                
                 // If translation
                 if(type == 't')
                 {   
                     // translation amounts of x,y,z
                     Translation translation = translations[transform_id - 1];
-                    translate_triangle(triangle,translation);
-                }
+                    translate_triangle(triangle,translation);                    
+                }           
                 // If rotation
                 else if(type == 'r')
                 {   
                     //rotation angle, and axis
                     Rotation rotation = rotations[transform_id - 1];
                     rotate_triangle(triangle,rotation);
+                    
                 }
                 // If scaling
                 else if(type == 's')
@@ -156,59 +156,58 @@ void forwardRenderingPipeline(Camera cam) {
                     Scaling scaling =  scalings[transform_id - 1];
                     scale_triangle(triangle,scaling);
                 }
+            }    
+            // b) CAMERA TRANSFORMATION
+            //cam_transform(triangle,M_cam);
 
-                // b) CAMERA TRANSFORMATION
-                    //cam_transform(triangle,M_cam);
+            // c) PERSPECTIVE TRANSFORMATION
+            //per_transform(triangle,M_per);
 
-                // c) PERSPECTIVE TRANSFORMATION
-                    //per_transform(triangle,M_per);
+            // d) PERSPECTIVE DIVIDE 
+            //per_divide(triangle);
 
-                // d) PERSPECTIVE DIVIDE 
-                    //per_divide(triangle);
+            // Make camera ,perspective transformation and perspective 
+            // dividing together
 
-                // Make camera ,perspective transformation and perspective 
-                // dividing together
-
-                    per_cam_transform(triangle,M_per_cam);
+            per_cam_transform(triangle,M_per_cam);
                 
-                // 2) CULLING (Pipeline 3.step)
+            // 2) CULLING (Pipeline 3.step)
                 
-                // Do culling if backfaced culling is enabled
-                if(backfaceCullingSetting == 1)
+            // Do culling if backfaced culling is enabled
+            if(backfaceCullingSetting == 1)
+            {
+                    
+                if(cull_triangle(triangle,cam.pos))
                 {
-                    
-                    if(cull_triangle(triangle))
-                    {
-                        // Pass triangle
-                        // Don't draw
-                        continue;
+                    // Pass triangle
+                    // Don't draw
+                    continue;
 
-                    }
                 }
-                // 3) VIEWPORT TRANSFORMATION (Pipeline 4.step)
-                    vp_transform(triangle,M_vp);
+            }
+            // 3) VIEWPORT TRANSFORMATION (Pipeline 4.step)
+                vp_transform(triangle,M_vp);
 
-                // 4) TRIANGLE RASTERIZATION (Pipeline 5.step)
+            // 4) TRIANGLE RASTERIZATION (Pipeline 5.step)
 
-                    // a ) MIDPOINT ALGORITHM
-                    midpoint(triangle);
-                    
-                    // IF SOLID FRAME : Use triangle barycentric 
-                    // coordinates to fill triangle's inside
-                    if(model -> type == 1)
-                    {                    
-                        fill_inside(triangle);
-                    }
+                // a ) MIDPOINT ALGORITHM
+                midpoint(triangle);
+                 
+                // IF SOLID FRAME : Use triangle barycentric 
+                // coordinates to fill triangle's inside
+            if(model -> type == 1)
+            {                    
+                fill_inside(triangle);
+            }
 
-                // FINISH HIM
-                
-            }      
+            // FINISH HIM                     
         }
     }
 }
 
 void translate_triangle(Triangle* triangle,Translation translation)
 {   
+    
     double M[4][4] = {{ 1 ,0 , 0 , translation.tx },
                     {0 , 1 , 0 , translation.ty },
                     {0 , 0 , 1 , translation.tz },
@@ -484,7 +483,71 @@ void midpoint(Triangle *triangle)
 
 void fill_inside(Triangle *triangle)
 {
+    Vec3 a = vertices[triangle -> vertexIds[0] - 1];
+    Vec3 b = vertices[triangle -> vertexIds[1] - 1];
+    Vec3 c = vertices[triangle -> vertexIds[2] - 1];
 
+    double x_0 = a.x; double y_0 = a.y;
+    double x_1 = b.x; double y_1 = b.y;
+    double x_2 = c.x; double y_2 = c.y;
+
+
+    int x_min = std::min( std::min(floor(a.x) , floor(b.x)) , floor(c.x));
+    int x_max = std::max( std::max(floor(a.x) , floor(b.x)) , floor(c.x));
+    int y_min = std::min( std::min(floor(a.y) , floor(b.y)) , floor(c.y));
+    int y_max = std::max( std::max(floor(a.y) , floor(b.y)) , floor(c.y));
+
+    double x0_y1 = x_0 * y_1;
+    double x0_y2 = x_0 * y_2;
+    double x1_y2 = x_1 * y_2;
+    double x2_y1 = x_2 * y_1;
+    double x2_y0 = x_2 * y_0;
+    double x1_y0 = x_1 * y_0;
+
+
+    double alpha_triangle = x_0 * (y_1 - y_2) + y_0 * (x_2 - x_1) + x1_y2 - x2_y1;
+    double beta_triangle  = x_1 * (y_2 - y_0) + y_1 * (x_0 - x_2) + x2_y0 - x0_y2;
+    double gamma_triangle = x_2 * (y_0 - y_1) + y_2 * (x_1 - x_0) + x0_y1 - x1_y0;
+
+
+
+    Color c_0 = colors[a.colorId - 1];
+    Color c_1 = colors[b.colorId - 1];
+    Color c_2 = colors[c.colorId - 1];
+    // Initial color
+    Color color = { 0 , 0 , 0 };
+
+    double alpha,beta,gamma;
+    
+    // For better performance -> temporal localization
+    // It is not finished
+    // alpha = (x_min - 1) * (y_1 - y_2) + (y_min - 1) * (x_2 - x_1) + x1_y2 + x2_y1; 
+    // beta =  (x_min - 1) * (y_2 - y_0) + (y_min - 1) * (x_0 - x_2) + x2_y0 + x0_y2;
+    // gamma = (x_min - 1) * (y_0 - y_1) + (y_min - 1) * (x_1 - x_0) + x0_y1 + x1_y0;
+
+    for(int y = y_min; y < y_max ; y++)
+    {
+        for(int x = x_min ; x < x_max ; x++)
+        {   
+            alpha = (x + 0.5) * (y_1 - y_2) + (y + 0.5) * (x_2 - x_1) + x1_y2 - x2_y1;
+            if(alpha / alpha_triangle < 0)
+                continue;          
+            beta = (x + 0.5) * (y_2 - y_0) + (y + 0.5) * (x_0 - x_2) + x2_y0 - x0_y2;
+            if(beta / beta_triangle < 0)
+                continue;
+            gamma = (x + 0.5) * (y_0 - y_1) + (y + 0.5) * (x_1 - x_0) + x0_y1 - x1_y0;
+            if(gamma / gamma_triangle < 0)
+                continue;
+
+            // Color multiplying performance can be increased
+            color.r = make_between_0_255(alpha * c_0.r + beta * c_1.r + gamma * c_2.r);
+            color.g = make_between_0_255(alpha * c_0.g + beta * c_1.g + gamma * c_2.g);
+            color.b = make_between_0_255(alpha * c_0.b + beta * c_1.b + gamma * c_2.b);
+
+            image[x][y] = color;
+        }
+    }
+  
 }
 
 // Multiplication function for Matrix[3][4] with Vec4d
