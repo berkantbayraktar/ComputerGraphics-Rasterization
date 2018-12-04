@@ -164,8 +164,8 @@ void forwardRenderingPipeline(Camera cam) {
                 // d) PERSPECTIVE DIVIDE 
                     //per_divide(triangle);
 
-                // Make camera ,perspective transformation and perspective 
-                // dividing together
+                // Make camera ,perspective transformation and
+                // perspective dividing together
 
                     per_cam_transform(triangle,M_per_cam);
                 
