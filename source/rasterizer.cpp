@@ -423,9 +423,23 @@ void per_cam_transform(Triangle *triangle , double M_per_cam[4][4])
     vertices[triangle -> vertexIds[2] - 1] = c;
 }
 
-bool cull_triangle(Triangle* triangle)
+bool cull_triangle(Triangle* triangle, Vec3 cam_pos)
 {
+    Vec3 a = vertices[triangle -> vertexIds[0] - 1];
+    Vec3 b = vertices[triangle -> vertexIds[1] - 1];
+    Vec3 c = vertices[triangle -> vertexIds[2] - 1];
 
+    Vec3 mid; // find middle point coordinates of the given triangle
+    mid.x = (a.x + b.x + c.x) / 3;
+    mid.y = (a.y + b.y + c.y) / 3;
+    mid.z = (a.z + b.z + c.z) / 3;
+    //calculate surface normal of triangle n = (a-mid) X (b- mid)
+    Vec3 surface_normal = crossProductVec3(subtractVec3(a,mid),subtractVec3(b,mid)); 
+
+    if(dotProductVec3(surface_normal,subtractVec3(mid,surface_normal)) > 0 )
+        return true;
+    else
+        return false;
 }
 
 void vp_transform(Triangle *triangle , double M_vp[3][4])
