@@ -40,17 +40,17 @@ Color **image;
 void mat_mul_with_vec4d(double r[3], double m[3][4], double v[4]);
 
 // Helper functions
-void translate_triangle(Triangle* triangle,Translation translation,Vec3* vertices);
-void rotate_triangle(Triangle * triangle,Rotation rotation);
-void scale_triangle(Triangle* triangle,Scaling scaling);
+void translate_triangle(Vec3 vertex_array[3],Translation translation);
+void rotate_triangle(Vec3 vertex_array[3], Rotation rotation);
+void scale_triangle(Vec3 vertex_array[3], Scaling scaling);
 //void cam_transform(Triangle *triangle , double M_cam[4][4]);
 //void per_transform(Triangle *triangle, double M_per_cam[4][4]);
-void per_cam_transform(Triangle *triangle, double M_per_cam[4][4]);
+void per_cam_transform(Vec3 vertex_array[3], double M_per_cam[4][4]);
 //void per_divide(Triangle *triangle);
-bool cull_triangle(Triangle* triangle, Vec3 cam_pos);
-void vp_transform(Triangle *triangle, double M_vp[3][4]);
-void midpoint(Triangle *triangle);
-void fill_inside(Triangle *triangle);
+bool cull_triangle(Vec3 vertex_array[3],Vec3 cam_pos);
+void vp_transform(Vec3 vertex_array[3], double M_vp[3][4]);
+void midpoint(Vec3 vertex_array[3]);
+void fill_inside(Vec3 vertex_array[3]);
 
 /*
 	Initializes image with background color
@@ -121,11 +121,19 @@ void forwardRenderingPipeline(Camera cam) {
         {   
             // pointer for triangle, we want to change this triangle in functions  
             Triangle* triangle = &(model -> triangles[j]);
+            Vec3 vertex_array[3];
+            vertex_array[0] = vertices[triangle -> vertexIds[0]];
+            vertex_array[1] = vertices[triangle -> vertexIds[1]];
+            vertex_array[2] = vertices[triangle -> vertexIds[2]];
             //Traverse model's triangles
             for(int k = 0 ; k < 1; k++)
             {
                 
-                // transform id of
+                std::cout << "Before" << std::endl;
+                printVec3(vertex_array[0]);
+                printVec3(vertex_array[1]);
+                printVec3(vertex_array[2]);
+                // transform id of model
                 int transform_id = model -> transformationIDs[k];
                 //transformation type (rotation,scale,translate)
                 char type = model -> transformationTypes[k];
@@ -136,7 +144,11 @@ void forwardRenderingPipeline(Camera cam) {
                 {   
                     // translation amounts of x,y,z
                     Translation translation = translations[transform_id];
-                    translate_triangle(triangle,translation,vertices);
+                    translate_triangle(vertex_array,translation);
+                    std::cout << "Translation" << std::endl;
+                    printVec3(vertex_array[0]);
+                    printVec3(vertex_array[1]);
+                    printVec3(vertex_array[2]);
 
                 }           
                 // If rotation
@@ -144,7 +156,11 @@ void forwardRenderingPipeline(Camera cam) {
                 {   
                     //rotation angle, and axis
                     Rotation rotation = rotations[transform_id];
-                    rotate_triangle(triangle,rotation);     
+                    rotate_triangle(vertex_array,rotation);
+                    std::cout << "Rotation" << std::endl;
+                    printVec3(vertex_array[0]);
+                    printVec3(vertex_array[1]);
+                    printVec3(vertex_array[2]);  
                     
                 }
                 // // If scaling
@@ -152,11 +168,15 @@ void forwardRenderingPipeline(Camera cam) {
                 {   
                     //scale factors
                     Scaling scaling = scalings[transform_id];
-                    scale_triangle(triangle,scaling);
+                    scale_triangle(vertex_array ,scaling);
+                    std::cout << "Scaling" << std::endl;
+                    printVec3(vertex_array[0]);
+                    printVec3(vertex_array[1]);
+                    printVec3(vertex_array[2]);
                 }
             }
             // b) CAMERA TRANSFORMATION
-            //cam_transform(triangle,M_cam);
+            //cam_transform(vertex_array,M_cam);
 
             // c) PERSPECTIVE TRANSFORMATION
             //per_transform(triangle,M_per);
@@ -167,43 +187,65 @@ void forwardRenderingPipeline(Camera cam) {
             // Make camera ,perspective transformation and perspective 
             // dividing together
 
-            per_cam_transform(triangle,M_per_cam);
+            per_cam_transform(vertex_array,M_per_cam);
+            std::cout << "percamtra" << std::endl;
+            printVec3(vertex_array[0]);
+            printVec3(vertex_array[1]);
+            printVec3(vertex_array[2]);
             
-            // 2) CULLING (Pipeline 3.step)
+            // // 2) CULLING (Pipeline 3.step)
                 
-            // Do culling if backfaced culling is enabled
+            // // Do culling if backfaced culling is enabled
             if(backfaceCullingSetting == 1)
             {
                     
 
-                if(cull_triangle(triangle,cam.pos))
+                if(cull_triangle(vertex_array , cam.pos))
                 {
                     // Pass triangle
                     // Don't draw
+                    std::cout << "Culled" << std::endl;
                     continue;
                 }
             }
-            // 3) VIEWPORT TRANSFORMATION (Pipeline 4.step)
-                vp_transform(triangle,M_vp);
+             // 3) VIEWPORT TRANSFORMATION (Pipeline 4.step)
+                
+                vp_transform(vertex_array,M_vp);
+                std::cout << "View Port" << std::endl;
+                printVec3(vertex_array[0]);
+                printVec3(vertex_array[1]);
+                printVec3(vertex_array[2]);
 
             // 4) TRIANGLE RASTERIZATION (Pipeline 5.step)
 
-                // a ) MIDPOINT ALGORITHM
-                midpoint(triangle);
+            // MIDPOINT ALGORITHM
+            if(model -> type == 0)
+            {   
+               
+                midpoint(vertex_array);
+                 std::cout << "Midpoint" << std::endl;
+                printVec3(vertex_array[0]);
+                printVec3(vertex_array[1]);
+                printVec3(vertex_array[2]);
+            }
                  
-                // IF SOLID FRAME : Use triangle barycentric 
-                // coordinates to fill triangle's inside
-            //if(model -> type == 1)
-            //{                    
-                fill_inside(triangle);
-            //}
+            // IF SOLID FRAME : Use triangle barycentric 
+            // coordinates to fill triangle's inside
+            else if(model -> type == 1)
+            {   
+                std::cout << "Triangle raster" << std::endl;
+                printVec3(vertex_array[0]);
+                printVec3(vertex_array[1]);
+                printVec3(vertex_array[2]);          
+                fill_inside(vertex_array);
+            }
 
             // FINISH HIM                     
         }
     }
 }
 
-void translate_triangle(Triangle* triangle,Translation translation,Vec3* v)
+void translate_triangle(Vec3 vertex_array[3], Translation translation)
 {   
     
     double M[4][4] = {{ 1 ,0 , 0 , translation.tx },
@@ -211,10 +253,9 @@ void translate_triangle(Triangle* triangle,Translation translation,Vec3* v)
                     {0 , 0 , 1 , translation.tz },
                     {0 , 0 , 0 , 1}};
 
-    Vec3 a = vertices[triangle -> vertexIds[0]];
-    Vec3 b = vertices[triangle -> vertexIds[1]];
-    Vec3 c = vertices[triangle -> vertexIds[2]];
-    
+    Vec3 a = vertex_array[0];
+    Vec3 b = vertex_array[1];
+    Vec3 c = vertex_array[2];
     // Make vertices homogenous
     double a_h[4] = { a.x , a.y , a.z , 1 };
     double b_h[4] = { b.x , b.y , b.z , 1 };
@@ -235,52 +276,51 @@ void translate_triangle(Triangle* triangle,Translation translation,Vec3* v)
     c.x = c_res[0]; c.y = c_res[1]; c.z = c_res[2];
 
     // Put transformed vertices 
-    vertices[triangle -> vertexIds[0]] = a;
-    vertices[triangle -> vertexIds[1]] = b;
-    vertices[triangle -> vertexIds[2]] = c;
+    vertex_array[0] = a;
+    vertex_array[1] = b;
+    vertex_array[2] = c;
 }
 // Rotation is little messy. Do it later
-void rotate_triangle(Triangle * triangle,Rotation rotation)
+void rotate_triangle(Vec3 vertex_array[3] ,Rotation rotation)
 {   
     // Use alternative method for rotating
     Vec3 u = { rotation.ux , rotation.uy , rotation.uz};
     Vec3 v,w;
-
     // Make smallest one zero while converting to v
     // If ux is smallest
-    if(abs(rotation.ux) <= abs(rotation.uy) && abs(rotation.ux) <= abs(rotation.uz))
+    if(u.x == 0 || abs(u.x) <= abs(u.y) && abs(u.y) <= abs(u.y))
     {   
         // Make smallest one zero
         v.x = 0;
         // Swap and negate one of them
-        v.y = -rotation.uz;
-        v.z = rotation.uy;
+        v.y = -1 * u.z;
+        v.z = u.y;
     }
     // If u_y is smallest
-    else if(abs(rotation.uy) <= abs(rotation.ux) && abs(rotation.uy) <= abs(rotation.uz))
+    else if(u.y == 0 || abs(u.y) <= abs(u.y) && abs(u.y) <= abs(u.z))
     {
         // Make smallest one zero
         v.y = 0;
         // Swap and negate one of them
-        v.x = -rotation.uz;
-        v.z = rotation.ux;
+        v.x = -1 * u.z;
+        v.z = u.x;
     }
     // If u_z is smallest
-    else if(abs(rotation.uz) <= abs(rotation.uy) && abs(rotation.uz) <= abs(rotation.ux))
+    else if(u.z == 0 || abs(u.z) <= abs(u.y) && abs(u.z) <= abs(u.x))
     {
         // Make smallest one zero
         v.z = 0;
         // Swap and negate one of them
-        v.x = -rotation.uy;
-        v.y = rotation.ux;
+        v.x = -1 * u.y;
+        v.y = u.x;
     }
 
     // Find w through cross product u x v
     w = crossProductVec3(u,v);
-
     // normalize v and w
     v = normalizeVec3(v);
     w = normalizeVec3(w);
+    
   
 
 
@@ -299,13 +339,13 @@ void rotate_triangle(Triangle * triangle,Rotation rotation)
     // I assumed we will rotation around x. I think it is okay
     // It is what the slides says
     double R_x[4][4] = {{ 1 , 0 , 0 , 0},
-                    { 0 , cos(rotation.angle) , -sin(rotation.angle) , 0},
-                    { 0 , sin(rotation.angle) ,cos(rotation.angle) , 0},
+                    { 0 , cos(M_PI * rotation.angle / 180) , -sin(M_PI * rotation.angle) , 0},
+                    { 0 , sin(M_PI * rotation.angle) ,cos(M_PI * rotation.angle) , 0},
                     { 0 , 0 , 0 , 1}};
-    Vec3 a = vertices[triangle -> vertexIds[0]];
-    Vec3 b = vertices[triangle -> vertexIds[1]];
-    Vec3 c = vertices[triangle -> vertexIds[2]];
 
+    Vec3 a = vertex_array[0];
+    Vec3 b = vertex_array[1];
+    Vec3 c = vertex_array[2];
     // Make vertices homogenous
     double a_h[4] = { a.x , a.y , a.z , 1 };
     double b_h[4] = { b.x , b.y , b.z , 1 };
@@ -318,18 +358,45 @@ void rotate_triangle(Triangle * triangle,Rotation rotation)
     // Multiply each vertex with transformation matrix
     // and store result in dummy arrays
     // Multiply wih  matrix M
+    std::cout << "YARAAK  " << std::endl;
+    for(int i = 0 ; i < 4 ;i ++)
+    {   
+
+        std::cout << a_res[i] << "  " << b_res[i] << "  " << c_res[i] << std::endl;
+    }
     multiplyMatrixWithVec4d(a_res,M,a_h);
     multiplyMatrixWithVec4d(b_res,M,b_h);
     multiplyMatrixWithVec4d(c_res,M,c_h);
+    std::cout << "YARAAK  " << std::endl;
+    for(int i = 0 ; i < 4 ;i ++)
+    {   
+        
+        std::cout << a_res[i] << "  " << b_res[i] << "  " << c_res[i] << std::endl;
+    }
+
     // Perform actual rotation
     multiplyMatrixWithVec4d(a_h,R_x,a_res);
     multiplyMatrixWithVec4d(b_h,R_x,b_res);
     multiplyMatrixWithVec4d(c_h,R_x,c_res);
+    std::cout << "YARAAK  " << std::endl;
+    for(int i = 0 ; i < 4 ;i ++)
+    {   
+        
+        std::cout << a_h[i] << "  " << b_h[i] << "  " << c_h[i] << std::endl;
+    }
+
   
     // Undo M back
     multiplyMatrixWithVec4d(a_res,M_reverse,a_h);
     multiplyMatrixWithVec4d(b_res,M_reverse,b_h);
     multiplyMatrixWithVec4d(c_res,M_reverse,c_h);
+    
+    std::cout << "YARAAK  " << std::endl;
+    for(int i = 0 ; i < 4 ;i ++)
+    {   
+        
+        std::cout << a_res[i] << "  " << b_res[i] << "  " << c_res[i] << std::endl;
+    }
 
     // crop homogenous parts from result
     a.x = a_res[0]; a.y = a_res[1]; a.z = a_res[2];
@@ -337,16 +404,15 @@ void rotate_triangle(Triangle * triangle,Rotation rotation)
     c.x = c_res[0]; c.y = c_res[1]; c.z = c_res[2];
 
     // Put transformed vertices 
-    vertices[triangle -> vertexIds[0]] = a;
-    vertices[triangle -> vertexIds[1]] = b;
-    vertices[triangle -> vertexIds[2]] = c;
-
+    vertex_array[0] = a;
+    vertex_array[1] = b;
+    vertex_array[2] = c;
       
 
 }
 
 
-void scale_triangle(Triangle* triangle,Scaling scaling)
+void scale_triangle(Vec3 vertex_array[3] ,Scaling scaling)
 {   
 
     // Transform matrix for scaling
@@ -355,9 +421,9 @@ void scale_triangle(Triangle* triangle,Scaling scaling)
                     { 0 , 0 , scaling.sz , 0},
                     { 0 , 0 , 0 , 1}};
 
-    Vec3 a = vertices[triangle -> vertexIds[0]];
-    Vec3 b = vertices[triangle -> vertexIds[1]];
-    Vec3 c = vertices[triangle -> vertexIds[2]];
+    Vec3 a = vertex_array[0];
+    Vec3 b = vertex_array[1];
+    Vec3 c = vertex_array[2];
 
     // Make vertices homogenous
     double a_h[4] = { a.x , a.y , a.z , 1 };
@@ -379,17 +445,17 @@ void scale_triangle(Triangle* triangle,Scaling scaling)
     c.x = c_res[0]; c.y = c_res[1]; c.z = c_res[2];
 
     // Put transformed vertices 
-    vertices[triangle -> vertexIds[0]] = a;
-    vertices[triangle -> vertexIds[1]] = b;
-    vertices[triangle -> vertexIds[2]] = c;
+    vertex_array[0] = a;
+    vertex_array[1] = b;
+    vertex_array[2] = c;
 }
 
 // perspective dividing,perspective transformation,camera transformation altogether 
-void per_cam_transform(Triangle *triangle , double M_per_cam[4][4])
+void per_cam_transform(Vec3 vertex_array[3] , double M_per_cam[4][4])
 {
-    Vec3 a = vertices[triangle -> vertexIds[0]];
-    Vec3 b = vertices[triangle -> vertexIds[1]];
-    Vec3 c = vertices[triangle -> vertexIds[2]];
+    Vec3 a = vertex_array[0];
+    Vec3 b = vertex_array[1];
+    Vec3 c = vertex_array[2];
 
     // Make vertices homogenous
     double a_h[4] = { a.x , a.y , a.z , 1 };
@@ -397,13 +463,17 @@ void per_cam_transform(Triangle *triangle , double M_per_cam[4][4])
     double c_h[4] = { c.x , c.y , c.z , 1 };
 
     // Create array to store result
-    double a_res[4],b_res[4],c_res[4];
+    double a_res[4] = { 0 , 0, 0 , 0};
+    double b_res[4] = { 0 , 0, 0 , 0};
+    double c_res[4] = { 0 , 0, 0 , 0};
 
     // Multiply each vertex with  transformation matrix
     // and store result in dummy arrays
     multiplyMatrixWithVec4d(a_res,M_per_cam,a_h);
     multiplyMatrixWithVec4d(b_res,M_per_cam,b_h);
     multiplyMatrixWithVec4d(c_res,M_per_cam,c_h);
+
+    
 
     // Store homogenous parts  for perspective dividing
     double divide_a = a_res[3];
@@ -418,16 +488,16 @@ void per_cam_transform(Triangle *triangle , double M_per_cam[4][4])
     c.x = c_res[0] / divide_c; c.y = c_res[1] / divide_c; c.z = c_res[2] / divide_c;
 
     // Put transformed vertices 
-    vertices[triangle -> vertexIds[0]] = a;
-    vertices[triangle -> vertexIds[1]] = b;
-    vertices[triangle -> vertexIds[2]] = c;
+    vertex_array[0] = a;
+    vertex_array[1] = b;
+    vertex_array[2] = c;
 }
 
-bool cull_triangle(Triangle* triangle, Vec3 cam_pos)
+bool cull_triangle(Vec3 vertex_array[3] , Vec3 cam_pos)
 {
-    Vec3 a = vertices[triangle -> vertexIds[0]];
-    Vec3 b = vertices[triangle -> vertexIds[1]];
-    Vec3 c = vertices[triangle -> vertexIds[2]];
+    Vec3 a = vertex_array[0];
+    Vec3 b = vertex_array[1];
+    Vec3 c = vertex_array[2];
 
     Vec3 mid; // find middle point coordinates of the given triangle
     mid.x = (a.x + b.x + c.x) / 3;
@@ -442,12 +512,12 @@ bool cull_triangle(Triangle* triangle, Vec3 cam_pos)
         return false;
 }
 
-void vp_transform(Triangle *triangle , double M_vp[3][4])
+// NO PROBLEM
+void vp_transform(Vec3 vertex_array[3], double M_vp[3][4])
 {
-    Vec3 a = vertices[triangle -> vertexIds[0]];
-    Vec3 b = vertices[triangle -> vertexIds[1]];
-    Vec3 c = vertices[triangle -> vertexIds[2]];
-
+    Vec3 a = vertex_array[0];
+    Vec3 b = vertex_array[1];
+    Vec3 c = vertex_array[2];
     // Make vertices homogenous
     double a_h[4] = { a.x , a.y , a.z , 1 };
     double b_h[4] = { b.x , b.y , b.z , 1 };
@@ -468,22 +538,21 @@ void vp_transform(Triangle *triangle , double M_vp[3][4])
     c.x = c_res[0]; c.y = c_res[1]; c.z = c_res[2];
 
     // Put transformed vertices 
-    vertices[triangle -> vertexIds[0]] = a;
-    vertices[triangle -> vertexIds[1]] = b;
-    vertices[triangle -> vertexIds[2]] = c;
-
+    vertex_array[0] = a;
+    vertex_array[1] = b;
+    vertex_array[2] = c;
 }
 
-void midpoint(Triangle *triangle)
+void midpoint(Vec3 vertex_array[3])
 {   /*        a 
               /\  
              /  \ 
            b/____\c
     */       
    int d,y;
-    Vec3 a = vertices[triangle -> vertexIds[0]];
-    Vec3 b = vertices[triangle -> vertexIds[1]];
-    Vec3 c = vertices[triangle -> vertexIds[2]];
+    Vec3 a = vertex_array[0];
+    Vec3 b = vertex_array[1];
+    Vec3 c = vertex_array[2];
 
     Vec3 triangle_vertices [3] = {a,b,c};
    
@@ -521,16 +590,15 @@ void midpoint(Triangle *triangle)
 
 }
 
-void fill_inside(Triangle *triangle)
+void fill_inside(Vec3 vertex_array[3])
 {
-    Vec3 a = vertices[triangle -> vertexIds[0]];
-    Vec3 b = vertices[triangle -> vertexIds[1]];
-    Vec3 c = vertices[triangle -> vertexIds[2]];
+    Vec3 a = vertex_array[0];
+    Vec3 b = vertex_array[1];
+    Vec3 c = vertex_array[2];
 
     double x_0 = a.x; double y_0 = a.y;
     double x_1 = b.x; double y_1 = b.y;
     double x_2 = c.x; double y_2 = c.y;
-
 
     int x_min = std::min( std::min(floor(a.x) , floor(b.x)) , floor(c.x));
     int x_max = std::max( std::max(floor(a.x) , floor(b.x)) , floor(c.x));
