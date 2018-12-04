@@ -177,7 +177,7 @@ void forwardRenderingPipeline(Camera cam) {
                 if(backfaceCullingSetting == 1)
                 {
                     
-                    if(cull_triangle(triangle))
+                    if(cull_triangle(triangle,cam.pos))
                     {
                         // Pass triangle
                         // Don't draw
@@ -477,8 +477,49 @@ void vp_transform(Triangle *triangle , double M_vp[3][4])
 }
 
 void midpoint(Triangle *triangle)
-{
+{   /*        a 
+              /\  
+             /  \ 
+           b/____\c
+    */       
+   int d,y;
+    Vec3 a = vertices[triangle -> vertexIds[0] - 1];
+    Vec3 b = vertices[triangle -> vertexIds[1] - 1];
+    Vec3 c = vertices[triangle -> vertexIds[2] - 1];
 
+    Vec3 triangle_vertices [3] = {a,b,c};
+   
+
+    for(int j = 0 ; j < 3 ; j++){
+        y = triangle_vertices[j].y;
+        d = 2 *  (triangle_vertices[j].y - triangle_vertices[(j+1)%3].y) + triangle_vertices[(j+1)%3].x - triangle_vertices[j].x; 
+        double c_r = colors[triangle_vertices[j].colorId-1].r;
+        double c_g = colors[triangle_vertices[j].colorId-1].g;
+        double c_b = colors[triangle_vertices[j].colorId-1].b;
+        double dc_r = (colors[triangle_vertices[(j+1)%3].colorId-1].r - colors[triangle_vertices[j].colorId-1].r) / (triangle_vertices[(j+1)%3].x-triangle_vertices[j].x);
+        double dc_g = (colors[triangle_vertices[(j+1)%3].colorId-1].r - colors[triangle_vertices[j].colorId-1].r) / (triangle_vertices[(j+1)%3].x-triangle_vertices[j].x);
+        double dc_b = (colors[triangle_vertices[(j+1)%3].colorId-1].r - colors[triangle_vertices[j].colorId-1].r) / (triangle_vertices[(j+1)%3].x-triangle_vertices[j].x);
+
+        for(int i = 0 ; i < triangle_vertices[(j+1)%3].x - triangle_vertices[j].x ; i++){
+
+            Color color ;
+            color.r = make_between_0_255(c_r);
+            color.g = make_between_0_255(c_g);
+            color.b = make_between_0_255(c_b);
+            image[(int)triangle_vertices[j].x][(int) triangle_vertices[j].y ] = color;
+            if(d < 0){
+                y = y+ 1;
+                d+= triangle_vertices[j].y- triangle_vertices[(j+1)%3].y + triangle_vertices[(j+1)%3].x - triangle_vertices[j].x;
+            }
+            else{
+                d += triangle_vertices[j].y - triangle_vertices[(j+1)%3].y;
+            }
+            c_r += dc_r;
+            c_g += dc_g;
+            c_b += dc_b;
+        }
+    }
+    
 
 }
 
