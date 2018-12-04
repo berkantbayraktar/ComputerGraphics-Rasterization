@@ -31,11 +31,13 @@ int numberOfVertices = 0;
 
 Color backgroundColor;
 
-// backface culling setting, default disabled
+// Backface culling setting, default disabled
 int backfaceCullingSetting = 0;
 
 Color **image;
 
+// Helper function for matrix multiplication
+void mat_mul_with_vec4d(double r[3], double m[3][4], double v[4]);
 
 // Helper functions
 void translate_triangle(Triangle* triangle,Translation translation);
@@ -470,7 +472,7 @@ void fill_inside(Triangle *triangle)
 }
 
 // Multiplication function for Matrix[3][4] with Vec4d
-// It is needed for viewpoer transformation
+// It is needed for viewport transformation
 void mat_mul_with_vec4d(double r[3], double m[3][4], double v[4]) {
     int i, j;
     double total;
@@ -481,13 +483,6 @@ void mat_mul_with_vec4d(double r[3], double m[3][4], double v[4]) {
         r[i] = total;
     }
 }
-
-
-
-
-
-
-
 
 
 
