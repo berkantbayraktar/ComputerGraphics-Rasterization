@@ -38,6 +38,7 @@ Vec3 normalizeVec3(Vec3 v) {
     double d;
 
     d = lengthOfVec3(v);
+    
     result.x = v.x / d;
     result.y = v.y / d;
     result.z = v.z / d;
@@ -136,7 +137,7 @@ void multiplyMatrixWithMatrix(double r[4][4], double m1[4][4], double m2[4][4]) 
  * Multiply matrix m (double[4][4]) with vector v (double[4]) and store the result in vector r (double[4]).
  */
 void multiplyMatrixWithVec4d(double r[4], double m[4][4], double v[4]) {
-    int i, j;
+    int i, j;   
     double total;
     for (i = 0; i < 4; i++) {
         total = 0;

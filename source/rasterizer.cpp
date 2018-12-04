@@ -40,7 +40,7 @@ Color **image;
 void mat_mul_with_vec4d(double r[3], double m[3][4], double v[4]);
 
 // Helper functions
-void translate_triangle(Triangle* triangle,Translation translation);
+void translate_triangle(Triangle* triangle,Translation translation,Vec3* vertices);
 void rotate_triangle(Triangle * triangle,Rotation rotation);
 void scale_triangle(Triangle* triangle,Scaling scaling);
 //void cam_transform(Triangle *triangle , double M_cam[4][4]);
@@ -111,52 +111,50 @@ void forwardRenderingPipeline(Camera cam) {
 
               
     // Traverse all models
-    for(int i = 0; i < numberOfModels;i++)
+    for(int i = 0; i < 1;i++)
     {   
         // pointer for model, we want to change this model in functions
         Model* model = &(models[i]);
-        
+             
         // Traverse model's transformations
-        for(int j = 0 ;j < model -> numberOfTriangles; j++)
+        for(int j = 0 ;j < 1; j++)
         {   
-            // pointer for triangle, we want to change this triangle in functions
-           
+            // pointer for triangle, we want to change this triangle in functions  
             Triangle* triangle = &(model -> triangles[j]);
-
             //Traverse model's triangles
-            for(int k = 0 ; k < model -> numberOfTransformations; k++)
+            for(int k = 0 ; k < 1; k++)
             {
-                 
+                
                 // transform id of
                 int transform_id = model -> transformationIDs[k];
                 //transformation type (rotation,scale,translate)
                 char type = model -> transformationTypes[k];
-                
                 // 1) VERTEX PROCESSING (Pipeline 1.step)
                 // a ) MODELING TRANSFORMATION
                 // If translation
                 if(type == 't')
                 {   
                     // translation amounts of x,y,z
-                    Translation translation = translations[transform_id - 1];
-                    translate_triangle(triangle,translation);                    
+                    Translation translation = translations[transform_id];
+                    translate_triangle(triangle,translation,vertices);
+
                 }           
                 // If rotation
                 else if(type == 'r')
                 {   
                     //rotation angle, and axis
-                    Rotation rotation = rotations[transform_id - 1];
-                    rotate_triangle(triangle,rotation);
+                    Rotation rotation = rotations[transform_id];
+                    rotate_triangle(triangle,rotation);     
                     
                 }
-                // If scaling
+                // // If scaling
                 else if(type == 's')
                 {   
                     //scale factors
-                    Scaling scaling =  scalings[transform_id - 1];
+                    Scaling scaling = scalings[transform_id];
                     scale_triangle(triangle,scaling);
                 }
-            }    
+            }
             // b) CAMERA TRANSFORMATION
             //cam_transform(triangle,M_cam);
 
@@ -170,7 +168,7 @@ void forwardRenderingPipeline(Camera cam) {
             // dividing together
 
             per_cam_transform(triangle,M_per_cam);
-                
+            
             // 2) CULLING (Pipeline 3.step)
                 
             // Do culling if backfaced culling is enabled
@@ -195,17 +193,17 @@ void forwardRenderingPipeline(Camera cam) {
                  
                 // IF SOLID FRAME : Use triangle barycentric 
                 // coordinates to fill triangle's inside
-            if(model -> type == 1)
-            {                    
+            //if(model -> type == 1)
+            //{                    
                 fill_inside(triangle);
-            }
+            //}
 
             // FINISH HIM                     
         }
     }
 }
 
-void translate_triangle(Triangle* triangle,Translation translation)
+void translate_triangle(Triangle* triangle,Translation translation,Vec3* v)
 {   
     
     double M[4][4] = {{ 1 ,0 , 0 , translation.tx },
@@ -213,10 +211,10 @@ void translate_triangle(Triangle* triangle,Translation translation)
                     {0 , 0 , 1 , translation.tz },
                     {0 , 0 , 0 , 1}};
 
-    Vec3 a = vertices[triangle -> vertexIds[0] - 1];
-    Vec3 b = vertices[triangle -> vertexIds[1] - 1];
-    Vec3 c = vertices[triangle -> vertexIds[2] - 1];
-
+    Vec3 a = vertices[triangle -> vertexIds[0]];
+    Vec3 b = vertices[triangle -> vertexIds[1]];
+    Vec3 c = vertices[triangle -> vertexIds[2]];
+    
     // Make vertices homogenous
     double a_h[4] = { a.x , a.y , a.z , 1 };
     double b_h[4] = { b.x , b.y , b.z , 1 };
@@ -237,9 +235,9 @@ void translate_triangle(Triangle* triangle,Translation translation)
     c.x = c_res[0]; c.y = c_res[1]; c.z = c_res[2];
 
     // Put transformed vertices 
-    vertices[triangle -> vertexIds[0] - 1] = a;
-    vertices[triangle -> vertexIds[1] - 1] = b;
-    vertices[triangle -> vertexIds[2] - 1] = c;
+    vertices[triangle -> vertexIds[0]] = a;
+    vertices[triangle -> vertexIds[1]] = b;
+    vertices[triangle -> vertexIds[2]] = c;
 }
 // Rotation is little messy. Do it later
 void rotate_triangle(Triangle * triangle,Rotation rotation)
@@ -283,6 +281,8 @@ void rotate_triangle(Triangle * triangle,Rotation rotation)
     // normalize v and w
     v = normalizeVec3(v);
     w = normalizeVec3(w);
+  
+
 
     // Matrix M
     double M[4][4] = { { u.x , u.y , u.z , 0 },
@@ -302,10 +302,9 @@ void rotate_triangle(Triangle * triangle,Rotation rotation)
                     { 0 , cos(rotation.angle) , -sin(rotation.angle) , 0},
                     { 0 , sin(rotation.angle) ,cos(rotation.angle) , 0},
                     { 0 , 0 , 0 , 1}};
-
-    Vec3 a = vertices[triangle -> vertexIds[0] - 1];
-    Vec3 b = vertices[triangle -> vertexIds[1] - 1];
-    Vec3 c = vertices[triangle -> vertexIds[2] - 1];
+    Vec3 a = vertices[triangle -> vertexIds[0]];
+    Vec3 b = vertices[triangle -> vertexIds[1]];
+    Vec3 c = vertices[triangle -> vertexIds[2]];
 
     // Make vertices homogenous
     double a_h[4] = { a.x , a.y , a.z , 1 };
@@ -313,26 +312,24 @@ void rotate_triangle(Triangle * triangle,Rotation rotation)
     double c_h[4] = { c.x , c.y , c.z , 1 };
 
     // Create array to store result
-    double a_res[4],b_res[4],c_res[4];
-
+    double a_res[4] = { 0 , 0, 0 , 0};
+    double b_res[4] = { 0 , 0, 0 , 0};
+    double c_res[4] = { 0 , 0, 0 , 0};
     // Multiply each vertex with transformation matrix
     // and store result in dummy arrays
-    
     // Multiply wih  matrix M
     multiplyMatrixWithVec4d(a_res,M,a_h);
     multiplyMatrixWithVec4d(b_res,M,b_h);
     multiplyMatrixWithVec4d(c_res,M,c_h);
-
     // Perform actual rotation
-    multiplyMatrixWithVec4d(a_res,R_x,a_h);
-    multiplyMatrixWithVec4d(b_res,R_x,b_h);
-    multiplyMatrixWithVec4d(c_res,R_x,c_h);
+    multiplyMatrixWithVec4d(a_h,R_x,a_res);
+    multiplyMatrixWithVec4d(b_h,R_x,b_res);
+    multiplyMatrixWithVec4d(c_h,R_x,c_res);
   
     // Undo M back
     multiplyMatrixWithVec4d(a_res,M_reverse,a_h);
     multiplyMatrixWithVec4d(b_res,M_reverse,b_h);
     multiplyMatrixWithVec4d(c_res,M_reverse,c_h);
-    
 
     // crop homogenous parts from result
     a.x = a_res[0]; a.y = a_res[1]; a.z = a_res[2];
@@ -340,9 +337,11 @@ void rotate_triangle(Triangle * triangle,Rotation rotation)
     c.x = c_res[0]; c.y = c_res[1]; c.z = c_res[2];
 
     // Put transformed vertices 
-    vertices[triangle -> vertexIds[0] - 1] = a;
-    vertices[triangle -> vertexIds[1] - 1] = b;
-    vertices[triangle -> vertexIds[2] - 1] = c;
+    vertices[triangle -> vertexIds[0]] = a;
+    vertices[triangle -> vertexIds[1]] = b;
+    vertices[triangle -> vertexIds[2]] = c;
+
+      
 
 }
 
@@ -356,9 +355,9 @@ void scale_triangle(Triangle* triangle,Scaling scaling)
                     { 0 , 0 , scaling.sz , 0},
                     { 0 , 0 , 0 , 1}};
 
-    Vec3 a = vertices[triangle -> vertexIds[0] - 1];
-    Vec3 b = vertices[triangle -> vertexIds[1] - 1];
-    Vec3 c = vertices[triangle -> vertexIds[2] - 1];
+    Vec3 a = vertices[triangle -> vertexIds[0]];
+    Vec3 b = vertices[triangle -> vertexIds[1]];
+    Vec3 c = vertices[triangle -> vertexIds[2]];
 
     // Make vertices homogenous
     double a_h[4] = { a.x , a.y , a.z , 1 };
@@ -380,17 +379,17 @@ void scale_triangle(Triangle* triangle,Scaling scaling)
     c.x = c_res[0]; c.y = c_res[1]; c.z = c_res[2];
 
     // Put transformed vertices 
-    vertices[triangle -> vertexIds[0] - 1] = a;
-    vertices[triangle -> vertexIds[1] - 1] = b;
-    vertices[triangle -> vertexIds[2] - 1] = c;
+    vertices[triangle -> vertexIds[0]] = a;
+    vertices[triangle -> vertexIds[1]] = b;
+    vertices[triangle -> vertexIds[2]] = c;
 }
 
 // perspective dividing,perspective transformation,camera transformation altogether 
 void per_cam_transform(Triangle *triangle , double M_per_cam[4][4])
 {
-    Vec3 a = vertices[triangle -> vertexIds[0] - 1];
-    Vec3 b = vertices[triangle -> vertexIds[1] - 1];
-    Vec3 c = vertices[triangle -> vertexIds[2] - 1];
+    Vec3 a = vertices[triangle -> vertexIds[0]];
+    Vec3 b = vertices[triangle -> vertexIds[1]];
+    Vec3 c = vertices[triangle -> vertexIds[2]];
 
     // Make vertices homogenous
     double a_h[4] = { a.x , a.y , a.z , 1 };
@@ -419,16 +418,16 @@ void per_cam_transform(Triangle *triangle , double M_per_cam[4][4])
     c.x = c_res[0] / divide_c; c.y = c_res[1] / divide_c; c.z = c_res[2] / divide_c;
 
     // Put transformed vertices 
-    vertices[triangle -> vertexIds[0] - 1] = a;
-    vertices[triangle -> vertexIds[1] - 1] = b;
-    vertices[triangle -> vertexIds[2] - 1] = c;
+    vertices[triangle -> vertexIds[0]] = a;
+    vertices[triangle -> vertexIds[1]] = b;
+    vertices[triangle -> vertexIds[2]] = c;
 }
 
 bool cull_triangle(Triangle* triangle, Vec3 cam_pos)
 {
-    Vec3 a = vertices[triangle -> vertexIds[0] - 1];
-    Vec3 b = vertices[triangle -> vertexIds[1] - 1];
-    Vec3 c = vertices[triangle -> vertexIds[2] - 1];
+    Vec3 a = vertices[triangle -> vertexIds[0]];
+    Vec3 b = vertices[triangle -> vertexIds[1]];
+    Vec3 c = vertices[triangle -> vertexIds[2]];
 
     Vec3 mid; // find middle point coordinates of the given triangle
     mid.x = (a.x + b.x + c.x) / 3;
@@ -445,9 +444,9 @@ bool cull_triangle(Triangle* triangle, Vec3 cam_pos)
 
 void vp_transform(Triangle *triangle , double M_vp[3][4])
 {
-    Vec3 a = vertices[triangle -> vertexIds[0] - 1];
-    Vec3 b = vertices[triangle -> vertexIds[1] - 1];
-    Vec3 c = vertices[triangle -> vertexIds[2] - 1];
+    Vec3 a = vertices[triangle -> vertexIds[0]];
+    Vec3 b = vertices[triangle -> vertexIds[1]];
+    Vec3 c = vertices[triangle -> vertexIds[2]];
 
     // Make vertices homogenous
     double a_h[4] = { a.x , a.y , a.z , 1 };
@@ -469,9 +468,9 @@ void vp_transform(Triangle *triangle , double M_vp[3][4])
     c.x = c_res[0]; c.y = c_res[1]; c.z = c_res[2];
 
     // Put transformed vertices 
-    vertices[triangle -> vertexIds[0] - 1] = a;
-    vertices[triangle -> vertexIds[1] - 1] = b;
-    vertices[triangle -> vertexIds[2] - 1] = c;
+    vertices[triangle -> vertexIds[0]] = a;
+    vertices[triangle -> vertexIds[1]] = b;
+    vertices[triangle -> vertexIds[2]] = c;
 
 }
 
@@ -482,9 +481,9 @@ void midpoint(Triangle *triangle)
            b/____\c
     */       
    int d,y;
-    Vec3 a = vertices[triangle -> vertexIds[0] - 1];
-    Vec3 b = vertices[triangle -> vertexIds[1] - 1];
-    Vec3 c = vertices[triangle -> vertexIds[2] - 1];
+    Vec3 a = vertices[triangle -> vertexIds[0]];
+    Vec3 b = vertices[triangle -> vertexIds[1]];
+    Vec3 c = vertices[triangle -> vertexIds[2]];
 
     Vec3 triangle_vertices [3] = {a,b,c};
    
@@ -492,12 +491,12 @@ void midpoint(Triangle *triangle)
     for(int j = 0 ; j < 3 ; j++){
         y = triangle_vertices[j].y;
         d = 2 *  (triangle_vertices[j].y - triangle_vertices[(j+1)%3].y) + triangle_vertices[(j+1)%3].x - triangle_vertices[j].x; 
-        double c_r = colors[triangle_vertices[j].colorId-1].r;
-        double c_g = colors[triangle_vertices[j].colorId-1].g;
-        double c_b = colors[triangle_vertices[j].colorId-1].b;
-        double dc_r = (colors[triangle_vertices[(j+1)%3].colorId-1].r - colors[triangle_vertices[j].colorId-1].r) / (triangle_vertices[(j+1)%3].x-triangle_vertices[j].x);
-        double dc_g = (colors[triangle_vertices[(j+1)%3].colorId-1].r - colors[triangle_vertices[j].colorId-1].r) / (triangle_vertices[(j+1)%3].x-triangle_vertices[j].x);
-        double dc_b = (colors[triangle_vertices[(j+1)%3].colorId-1].r - colors[triangle_vertices[j].colorId-1].r) / (triangle_vertices[(j+1)%3].x-triangle_vertices[j].x);
+        double c_r = colors[triangle_vertices[j].colorId].r;
+        double c_g = colors[triangle_vertices[j].colorId].g;
+        double c_b = colors[triangle_vertices[j].colorId].b;
+        double dc_r = (colors[triangle_vertices[(j+1)%3].colorId].r - colors[triangle_vertices[j].colorId].r) / (triangle_vertices[(j+1)%3].x-triangle_vertices[j].x);
+        double dc_g = (colors[triangle_vertices[(j+1)%3].colorId].r - colors[triangle_vertices[j].colorId].r) / (triangle_vertices[(j+1)%3].x-triangle_vertices[j].x);
+        double dc_b = (colors[triangle_vertices[(j+1)%3].colorId].r - colors[triangle_vertices[j].colorId].r) / (triangle_vertices[(j+1)%3].x-triangle_vertices[j].x);
 
         for(int i = 0 ; i < triangle_vertices[(j+1)%3].x - triangle_vertices[j].x ; i++){
 
@@ -505,7 +504,7 @@ void midpoint(Triangle *triangle)
             color.r = make_between_0_255(c_r);
             color.g = make_between_0_255(c_g);
             color.b = make_between_0_255(c_b);
-            image[(int)triangle_vertices[j].x][(int) triangle_vertices[j].y ] = color;
+            //image[(int) (triangle_vertices[j].x - 0.5)][(int) (triangle_vertices[j].y - 0.5)] = color;
             if(d < 0){
                 y = y+ 1;
                 d+= triangle_vertices[j].y- triangle_vertices[(j+1)%3].y + triangle_vertices[(j+1)%3].x - triangle_vertices[j].x;
@@ -524,9 +523,9 @@ void midpoint(Triangle *triangle)
 
 void fill_inside(Triangle *triangle)
 {
-    Vec3 a = vertices[triangle -> vertexIds[0] - 1];
-    Vec3 b = vertices[triangle -> vertexIds[1] - 1];
-    Vec3 c = vertices[triangle -> vertexIds[2] - 1];
+    Vec3 a = vertices[triangle -> vertexIds[0]];
+    Vec3 b = vertices[triangle -> vertexIds[1]];
+    Vec3 c = vertices[triangle -> vertexIds[2]];
 
     double x_0 = a.x; double y_0 = a.y;
     double x_1 = b.x; double y_1 = b.y;
@@ -552,9 +551,9 @@ void fill_inside(Triangle *triangle)
 
 
 
-    Color c_0 = colors[a.colorId - 1];
-    Color c_1 = colors[b.colorId - 1];
-    Color c_2 = colors[c.colorId - 1];
+    Color c_0 = colors[a.colorId];
+    Color c_1 = colors[b.colorId];
+    Color c_2 = colors[c.colorId];
     // Initial color
     Color color = { 0 , 0 , 0 };
 
@@ -585,7 +584,7 @@ void fill_inside(Triangle *triangle)
             color.g = make_between_0_255(alpha * c_0.g + beta * c_1.g + gamma * c_2.g);
             color.b = make_between_0_255(alpha * c_0.b + beta * c_1.b + gamma * c_2.b);
 
-            image[x][y] = color;
+            //image[x][y] = color;
         }
     }
   
@@ -609,6 +608,7 @@ void mat_mul_with_vec4d(double r[3], double m[3][4], double v[4]) {
 
 
 int main(int argc, char **argv) {
+
     int i, j;
 
     if (argc < 2) {
