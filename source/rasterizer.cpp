@@ -177,7 +177,7 @@ void forwardRenderingPipeline(Camera cam) {
                 if(backfaceCullingSetting == 1)
                 {
                     
-                    if(cull_triangle(triangle))
+                    if(cull_triangle(triangle,cam.pos))
                     {
                         // Pass triangle
                         // Don't draw
