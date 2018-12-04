@@ -41,11 +41,11 @@ Color **image;
 void translate_triangle(Triangle* triangle,Translation translation);
 void rotate_triangle(Triangle * triangle,Rotation rotation);
 void scale_triangle(Triangle* triangle,Scaling scaling);
-bool cull_triangle(Triangle* triangle);
 //void cam_transform(Triangle *triangle , double M_cam[4][4]);
 //void per_transform(Triangle *triangle, double M_per_cam[4][4]);
 void per_cam_transform(Triangle *triangle, double M_per_cam[4][4]);
 //void per_divide(Triangle *triangle);
+bool cull_triangle(Triangle* triangle);
 void vp_transform(Triangle *triangle, double M_vp[3][4]);
 void midpoint(Triangle *triangle);
 void fill_inside(Triangle *triangle);
@@ -164,8 +164,8 @@ void forwardRenderingPipeline(Camera cam) {
                 // d) PERSPECTIVE DIVIDE 
                     //per_divide(triangle);
 
-                // Make camera ,perspective transformation and
-                // perspective dividing together
+                // Make camera ,perspective transformation and perspective 
+                // dividing together
 
                     per_cam_transform(triangle,M_per_cam);
                 
@@ -241,7 +241,106 @@ void translate_triangle(Triangle* triangle,Translation translation)
 // Rotation is little messy. Do it later
 void rotate_triangle(Triangle * triangle,Rotation rotation)
 {   
-    // Use alternativ method for rotating
+    // Use alternative method for rotating
+    Vec3 u = { rotation.ux , rotation.uy , rotation.uz};
+    Vec3 v,w;
+
+    // Make smallest one zero while converting to v
+    // If ux is smallest
+    if(abs(rotation.ux) < abs(rotation.uy) && abs(rotation.ux) < abs(rotation.uz))
+    {   
+        // Make smallest one zero
+        v.x = 0;
+        // Swap and negate one of them
+        v.y = - rotation.uz;
+        v.z = rotation.uy;
+    }
+    // If u_y is smallest
+    else if(abs(rotation.uy) < abs(rotation.ux) && abs(rotation.uy) < abs(rotation.uz))
+    {
+        // Make smallest one zero
+        v.y = 0;
+        // Swap and negate one of them
+        v.x = -rotation.uz;
+        v.z = rotation.ux;
+    }
+    // If u_z is smallest
+    else if(abs(rotation.uz) < abs(rotation.uy) && abs(rotation.uz) < abs(rotation.ux))
+    {
+        // Make smallest one zero
+        v.z = 0;
+        // Swap and negate one of them
+        v.x = -rotation.uy;
+        v.y = rotation.ux;
+    }
+
+    // Find w throug corss product u x v
+    w = crossProductVec3(u,v);
+
+    // normalize v and w
+    v = normalizeVec3(v);
+    w = normalizeVec3(w);
+
+    // Matrix M
+    double M[4][4] = { { u.x , u.y , u.z , 0 },
+                    { v.x , v.y , v.z , 0 },
+                    { w.x , w.y , w.z , 0 },
+                    { 0 , 0 , 0 , 1}};
+    // Matrix M^-1 
+    double M_reverse[4][4] = { { u.x , v.x , w.x , 0},
+                            { u.y , v.y , w.y , 0},
+                            { u.z , v.z , w.z , 0},
+                            { 0 , 0 , 0 , 1}};
+
+    // Rotation matrix around x
+    // I assumed we will rotation around x. I think it is okay
+    // It is what the slides says
+    double R_x[4][4] = {{ 1 , 0 , 0 , 0},
+                    { 0 , cos(rotation.angle) , -sin(rotation.angle) , 0},
+                    { 0 , sin(rotation.angle) ,cos(rotation.angle) , 0},
+                    { 0 , 0 , 0 , 1}};
+
+    Vec3 a = vertices[triangle -> vertexIds[0] - 1];
+    Vec3 b = vertices[triangle -> vertexIds[1] - 1];
+    Vec3 c = vertices[triangle -> vertexIds[2] - 1];
+
+    // Make vertices homogenous
+    double a_h[4] = { a.x , a.y , a.z , 1 };
+    double b_h[4] = { b.x , b.y , b.z , 1 };
+    double c_h[4] = { c.x , c.y , c.z , 1 };
+
+    // Create array to store result
+    double a_res[4],b_res[4],c_res[4];
+
+    // Multiply each vertex with transformation matrix
+    // and store result in dummy arrays
+    
+    // Multiply wih  matrix M
+    multiplyMatrixWithVec4d(a_res,M,a_h);
+    multiplyMatrixWithVec4d(b_res,M,b_h);
+    multiplyMatrixWithVec4d(c_res,M,c_h);
+
+    // Perform actual rotation
+    multiplyMatrixWithVec4d(a_res,R_x,a_h);
+    multiplyMatrixWithVec4d(b_res,R_x,b_h);
+    multiplyMatrixWithVec4d(c_res,R_x,c_h);
+  
+    // Undo M back
+    multiplyMatrixWithVec4d(a_res,M_reverse,a_h);
+    multiplyMatrixWithVec4d(b_res,M_reverse,b_h);
+    multiplyMatrixWithVec4d(c_res,M_reverse,c_h);
+    
+
+    // crop homogenous parts from result
+    a.x = a_res[0]; a.y = a_res[1]; a.z = a_res[2];
+    b.x = b_res[0]; b.y = b_res[1]; b.z = b_res[2];
+    c.x = c_res[0]; c.y = c_res[1]; c.z = c_res[2];
+
+    // Put transformed vertices 
+    vertices[triangle -> vertexIds[0] - 1] = a;
+    vertices[triangle -> vertexIds[1] - 1] = b;
+    vertices[triangle -> vertexIds[2] - 1] = c;
+
 }
 
 
@@ -284,7 +383,7 @@ void scale_triangle(Triangle* triangle,Scaling scaling)
 }
 
 // perspective dividing,perspective transformation,camera transformation altogether 
-void per_cam_transform(double dividend[3], Triangle *triangle , double M_per_cam[4][4])
+void per_cam_transform(Triangle *triangle , double M_per_cam[4][4])
 {
     Vec3 a = vertices[triangle -> vertexIds[0] - 1];
     Vec3 b = vertices[triangle -> vertexIds[1] - 1];
