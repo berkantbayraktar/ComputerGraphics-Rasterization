@@ -276,7 +276,7 @@ void rotate_triangle(Triangle * triangle,Rotation rotation)
         v.y = rotation.ux;
     }
 
-    // Find w throug corss product u x v
+    // Find w through cross product u x v
     w = crossProductVec3(u,v);
 
     // normalize v and w
