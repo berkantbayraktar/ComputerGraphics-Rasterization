@@ -287,31 +287,22 @@ void rotate_triangle(Vec3 vertex_array[3] ,Rotation rotation)
     Vec3 u = { rotation.ux , rotation.uy , rotation.uz};
     Vec3 v,w;
     // Make smallest one zero while converting to v
-    // If ux is smallest
-    if(u.x == 0 || abs(u.x) <= abs(u.y) && abs(u.y) <= abs(u.y))
-    {   
-        // Make smallest one zero
+    // if u.x is smallest
+    if(u.x < u.y && u.x < u.z){ 
         v.x = 0;
-        // Swap and negate one of them
-        v.y = -1 * u.z;
+        v.y = u.z ;
         v.z = u.y;
     }
-    // If u_y is smallest
-    else if(u.y == 0 || abs(u.y) <= abs(u.y) && abs(u.y) <= abs(u.z))
-    {
-        // Make smallest one zero
+    // if u.y is smallest
+    else if( u.y < u.z){
         v.y = 0;
-        // Swap and negate one of them
-        v.x = -1 * u.z;
+        v.x = u.z;
         v.z = u.x;
     }
-    // If u_z is smallest
-    else if(u.z == 0 || abs(u.z) <= abs(u.y) && abs(u.z) <= abs(u.x))
-    {
-        // Make smallest one zero
+    // if u.z is smallest
+    else{
         v.z = 0;
-        // Swap and negate one of them
-        v.x = -1 * u.y;
+        v.x = u.y;
         v.y = u.x;
     }
 
