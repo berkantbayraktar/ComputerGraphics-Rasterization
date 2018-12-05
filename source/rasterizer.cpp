@@ -339,8 +339,8 @@ void rotate_triangle(Vec3 vertex_array[3] ,Rotation rotation)
     // I assumed we will rotation around x. I think it is okay
     // It is what the slides says
     double R_x[4][4] = {{ 1 , 0 , 0 , 0},
-                    { 0 , cos(M_PI * rotation.angle / 180) , -sin(M_PI * rotation.angle) , 0},
-                    { 0 , sin(M_PI * rotation.angle) ,cos(M_PI * rotation.angle) , 0},
+                    { 0 , cos((M_PI * rotation.angle) / 180) , -sin((M_PI * rotation.angle) / 180) , 0},
+                    { 0 , sin((M_PI * rotation.angle) / 180) ,cos((M_PI * rotation.angle) / 180) , 0},
                     { 0 , 0 , 0 , 1}};
 
     Vec3 a = vertex_array[0];
