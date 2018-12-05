@@ -404,7 +404,14 @@ void rotate_triangle(Vec3 vertex_array[3] ,Rotation rotation)
 
 
 void scale_triangle(Vec3 vertex_array[3] ,Scaling scaling)
-{   
+{   /*
+        LOGIC MISTAKE
+        1- TRANSLATE TO ORIGIN 
+        2- SCALE
+        3- TRANSLATE BACK
+
+        WE HAVE TO FIX THIS
+    */
 
     // Transform matrix for scaling
     double M[4][4] = {{ scaling.sx , 0 , 0 , 0 },
