@@ -539,6 +539,8 @@ void midpoint(Vec3 vertex_array[3])
 
 void fill_inside(Vec3 vertex_array[3])
 {
+
+    double eps = 0.000000001;
     Vec3 a = vertex_array[0];
     Vec3 b = vertex_array[1];
     Vec3 c = vertex_array[2];
@@ -547,10 +549,11 @@ void fill_inside(Vec3 vertex_array[3])
     double x_1 = b.x; double y_1 = b.y;
     double x_2 = c.x; double y_2 = c.y;
 
-    int x_min = std::min( std::min( floor(a.x) , floor(b.x)) , floor(c.x));
-    int x_max = std::max( std::max( ceil(a.x) , ceil(b.x)) , ceil(c.x));
-    int y_min = std::min( std::min( floor(a.y) , floor(b.y)) , floor(c.y));
-    int y_max = std::max( std::max( ceil(a.y) ,  ceil(b.y)) , ceil(c.y));
+    // Floor for min , ceil for max since we want large bounding box
+    int x_min = floor(std::min( std::min( a.x , b.x) , c.x));
+    int x_max = ceil(std::max( std::max( a.x , b.x) , c.x));
+    int y_min = floor(std::min( std::min( a.y , b.y) , c.y));
+    int y_max = ceil(std::max( std::max( a.y , b.y) , c.y));
 
     double x0_y1 = x_0 * y_1;
     double x0_y2 = x_0 * y_2;
@@ -580,9 +583,9 @@ void fill_inside(Vec3 vertex_array[3])
     // beta =  (x_min - 1) * (y_2 - y_0) + (y_min - 1) * (x_0 - x_2) + x2_y0 + x0_y2;
     // gamma = (x_min - 1) * (y_0 - y_1) + (y_min - 1) * (x_1 - x_0) + x0_y1 + x1_y0;
 
-    for(int y = y_min; y < y_max ; y++)
+    for(int y = y_min; y <= y_max ; y++)
     {
-        for(int x = x_min ; x < x_max ; x++)
+        for(int x = x_min ; x <= x_max ; x++)
         {
             alpha = (x * (y_1 - y_2) + y * (x_2 - x_1) + x1_y2 - x2_y1) / alpha_triangle;
             if(alpha  < 0)
