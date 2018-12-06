@@ -1,3 +1,6 @@
 scripts/
 .vscode/
 *.ppm
+*.DS_Store
+.DS_Store/
+*.dSYM

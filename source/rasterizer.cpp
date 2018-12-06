@@ -219,7 +219,7 @@ void forwardRenderingPipeline(Camera cam) {
             // 4) TRIANGLE RASTERIZATION (Pipeline 5.step)
 
             // MIDPOINT ALGORITHM
-            if(model -> type == 0)
+            if(model -> type == 1)
             {
 
                 midpoint(vertex_array);
@@ -231,7 +231,7 @@ void forwardRenderingPipeline(Camera cam) {
 
             // IF SOLID FRAME : Use triangle barycentric
             // coordinates to fill triangle's inside
-            else if(model -> type == 1)
+            else if(model -> type == 0)
             {
                 std::cout << "Triangle raster" << std::endl;
                 printVec3(vertex_array[0]);
@@ -308,7 +308,8 @@ void rotate_triangle(Vec3 vertex_array[3] ,Rotation rotation)
 
     // Find w through cross product u x v
     w = crossProductVec3(u,v);
-    // normalize v and w
+    // normalize u,v and w
+    u = normalizeVec3(u);
     v = normalizeVec3(v);
     w = normalizeVec3(w);
 
@@ -346,22 +347,29 @@ void rotate_triangle(Vec3 vertex_array[3] ,Rotation rotation)
     double a_res[4] = { 0 , 0, 0 , 0};
     double b_res[4] = { 0 , 0, 0 , 0};
     double c_res[4] = { 0 , 0, 0 , 0};
+
     // Multiply each vertex with transformation matrix
     // and store result in dummy arrays
+
     // Multiply wih  matrix M
     multiplyMatrixWithVec4d(a_res,M,a_h);
     multiplyMatrixWithVec4d(b_res,M,b_h);
     multiplyMatrixWithVec4d(c_res,M,c_h);
+
+
 
     // Perform actual rotation
     multiplyMatrixWithVec4d(a_h,R_x,a_res);
     multiplyMatrixWithVec4d(b_h,R_x,b_res);
     multiplyMatrixWithVec4d(c_h,R_x,c_res);
 
+
+
     // Undo M back
     multiplyMatrixWithVec4d(a_res,M_reverse,a_h);
     multiplyMatrixWithVec4d(b_res,M_reverse,b_h);
     multiplyMatrixWithVec4d(c_res,M_reverse,c_h);
+
     // crop homogenous parts from result
     a.x = a_res[0]; a.y = a_res[1]; a.z = a_res[2];
     b.x = b_res[0]; b.y = b_res[1]; b.z = b_res[2];
@@ -383,6 +391,9 @@ void scale_triangle(Vec3 vertex_array[3] ,Scaling scaling)
         3- TRANSLATE BACK
 
         WE HAVE TO FIX THIS
+
+
+        WE DON'T HAVE TO TRANSLATE !!!
     */
 
     // Transform matrix for scaling
@@ -413,7 +424,6 @@ void scale_triangle(Vec3 vertex_array[3] ,Scaling scaling)
     a.x = a_res[0]; a.y = a_res[1]; a.z = a_res[2];
     b.x = b_res[0]; b.y = b_res[1]; b.z = b_res[2];
     c.x = c_res[0]; c.y = c_res[1]; c.z = c_res[2];
-
     // Put transformed vertices
     vertex_array[0] = a;
     vertex_array[1] = b;
@@ -570,10 +580,10 @@ void fill_inside(Vec3 vertex_array[3])
     double x_1 = b.x; double y_1 = b.y;
     double x_2 = c.x; double y_2 = c.y;
 
-    int x_min = std::min( std::min(floor(a.x) , floor(b.x)) , floor(c.x));
-    int x_max = std::max( std::max(floor(a.x) , floor(b.x)) , floor(c.x));
-    int y_min = std::min( std::min(floor(a.y) , floor(b.y)) , floor(c.y));
-    int y_max = std::max( std::max(floor(a.y) , floor(b.y)) , floor(c.y));
+    int x_min = std::min( std::min( floor(a.x) , floor(b.x)) , floor(c.x));
+    int x_max = std::max( std::max( ceil(a.x) , ceil(b.x)) , ceil(c.x));
+    int y_min = std::min( std::min( floor(a.y) , floor(b.y)) , floor(c.y));
+    int y_max = std::max( std::max( ceil(a.y) ,  ceil(b.y)) , ceil(c.y));
 
     double x0_y1 = x_0 * y_1;
     double x0_y2 = x_0 * y_2;
@@ -607,14 +617,14 @@ void fill_inside(Vec3 vertex_array[3])
     {
         for(int x = x_min ; x < x_max ; x++)
         {
-            alpha = (x + 0.5) * (y_1 - y_2) + (y + 0.5) * (x_2 - x_1) + x1_y2 - x2_y1;
-            if(alpha / alpha_triangle < 0)
+            alpha = (x * (y_1 - y_2) + y * (x_2 - x_1) + x1_y2 - x2_y1) / alpha_triangle;
+            if(alpha  < 0)
                 continue;
-            beta = (x + 0.5) * (y_2 - y_0) + (y + 0.5) * (x_0 - x_2) + x2_y0 - x0_y2;
-            if(beta / beta_triangle < 0)
+            beta = (x * (y_2 - y_0) + y * (x_0 - x_2) + x2_y0 - x0_y2) / beta_triangle;
+            if(beta < 0)
                 continue;
-            gamma = (x + 0.5) * (y_0 - y_1) + (y + 0.5) * (x_1 - x_0) + x0_y1 - x1_y0;
-            if(gamma / gamma_triangle < 0)
+            gamma = (x * (y_0 - y_1) + y * (x_1 - x_0) + x0_y1 - x1_y0) / gamma_triangle;
+            if(gamma < 0)
                 continue;
 
             // Color multiplying performance can be increased
@@ -654,23 +664,6 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    std::cout << "Rotation" << std::endl;
-    Vec3 array[3] = {{3,5,0},{10,6,0},{1,1,0}};
-    Rotation rt = {60,6,10,0};
-    Translation tr = {-6,2,0};
-    Translation undo = {6,-2,0};
-    translate_triangle(array,tr);
-    printVec3(array[0]);
-    printVec3(array[1]);
-    printVec3(array[2]);
-    rotate_triangle(array,rt);
-    printVec3(array[0]);
-    printVec3(array[1]);
-    printVec3(array[2]);
-    translate_triangle(array,undo);
-    printVec3(array[0]);
-    printVec3(array[1]);
-    printVec3(array[2]);
     // read camera and scene files
     readSceneFile(argv[1]);
     readCameraFile(argv[2]);
@@ -708,7 +701,7 @@ int main(int argc, char **argv) {
         initializeImage(cameras[i]);
 
         // do forward rendering pipeline operations
-        //forwardRenderingPipeline(cameras[i]);
+        forwardRenderingPipeline(cameras[i]);
 
         // generate PPM file
         writeImageToPPMFile(cameras[i]);
