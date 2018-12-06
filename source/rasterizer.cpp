@@ -111,13 +111,13 @@ void forwardRenderingPipeline(Camera cam) {
 
               
     // Traverse all models
-    for(int i = 0; i < 1;i++)
+    for(int i = 0; i < numberOfModels;i++)
     {   
         // pointer for model, we want to change this model in functions
         Model* model = &(models[i]);
              
         // Traverse model's transformations
-        for(int j = 0 ;j < 1; j++)
+        for(int j = 0 ;j <  model->numberOfTransformations; j++)
         {   
             // pointer for triangle, we want to change this triangle in functions  
             Triangle* triangle = &(model -> triangles[j]);
@@ -126,7 +126,7 @@ void forwardRenderingPipeline(Camera cam) {
             vertex_array[1] = vertices[triangle -> vertexIds[1]];
             vertex_array[2] = vertices[triangle -> vertexIds[2]];
             //Traverse model's triangles
-            for(int k = 0 ; k < 1; k++)
+            for(int k = 0 ; k < model->numberOfTriangles; k++)
             {
                 
                 std::cout << "Before" << std::endl;
@@ -571,7 +571,7 @@ void midpoint(Vec3 vertex_array[3])
             color.r = make_between_0_255(c_r);
             color.g = make_between_0_255(c_g);
             color.b = make_between_0_255(c_b);
-            //image[(int) (triangle_vertices[j].x - 0.5)][(int) (triangle_vertices[j].y - 0.5)] = color;
+            image[(int) (triangle_vertices[j].x + 0.5)][(int) (triangle_vertices[j].y + 0.5)] = color;
             if(d < 0){
                 y = y+ 1;
                 d+= triangle_vertices[j].y- triangle_vertices[(j+1)%3].y + triangle_vertices[(j+1)%3].x - triangle_vertices[j].x;
@@ -650,7 +650,7 @@ void fill_inside(Vec3 vertex_array[3])
             color.g = make_between_0_255(alpha * c_0.g + beta * c_1.g + gamma * c_2.g);
             color.b = make_between_0_255(alpha * c_0.b + beta * c_1.b + gamma * c_2.b);
 
-            //image[x][y] = color;
+            image[x][y] = color;
         }
     }
   
