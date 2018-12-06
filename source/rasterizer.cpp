@@ -76,7 +76,7 @@ void forwardRenderingPipeline(Camera cam) {
 
 
     double u_x,u_y,u_z,v_x,v_y,v_z,w_x,w_y,w_z,e_x,e_y,e_z,n,f,t,l,b,r,n_x,n_y;
-    
+
     // Camera related points and vectors
     u_x = cam.u.x; u_y = cam.u.y ; u_z = cam.u.z; // u
     v_x = cam.v.x; v_y = cam.v.y ; v_z = cam.v.z; // v
@@ -109,26 +109,26 @@ void forwardRenderingPipeline(Camera cam) {
                     { 0 , n_y * 0.5 , 0 , (n_y-1) * 0.5 },
                     {0 ,0 , 0.5 , 0.5} };
 
-              
+
     // Traverse all models
     for(int i = 0; i < numberOfModels;i++)
-    {   
+    {
         // pointer for model, we want to change this model in functions
         Model* model = &(models[i]);
-             
+
         // Traverse model's transformations
-        for(int j = 0 ;j <  model->numberOfTransformations; j++)
-        {   
-            // pointer for triangle, we want to change this triangle in functions  
+        for(int j = 0 ;j <  model-> numberOfTriangles; j++)
+        {
+            // pointer for triangle, we want to change this triangle in functions
             Triangle* triangle = &(model -> triangles[j]);
             Vec3 vertex_array[3];
             vertex_array[0] = vertices[triangle -> vertexIds[0]];
             vertex_array[1] = vertices[triangle -> vertexIds[1]];
             vertex_array[2] = vertices[triangle -> vertexIds[2]];
             //Traverse model's triangles
-            for(int k = 0 ; k < model->numberOfTriangles; k++)
+            for(int k = 0 ; k < model -> numberOfTransformations; k++)
             {
-                
+
                 std::cout << "Before" << std::endl;
                 printVec3(vertex_array[0]);
                 printVec3(vertex_array[1]);
@@ -141,7 +141,7 @@ void forwardRenderingPipeline(Camera cam) {
                 // a ) MODELING TRANSFORMATION
                 // If translation
                 if(type == 't')
-                {   
+                {
                     // translation amounts of x,y,z
                     Translation translation = translations[transform_id];
                     translate_triangle(vertex_array,translation);
@@ -150,22 +150,22 @@ void forwardRenderingPipeline(Camera cam) {
                     printVec3(vertex_array[1]);
                     printVec3(vertex_array[2]);
 
-                }           
+                }
                 // If rotation
                 else if(type == 'r')
-                {   
+                {
                     //rotation angle, and axis
                     Rotation rotation = rotations[transform_id];
                     rotate_triangle(vertex_array,rotation);
                     std::cout << "Rotation" << std::endl;
                     printVec3(vertex_array[0]);
                     printVec3(vertex_array[1]);
-                    printVec3(vertex_array[2]);  
-                    
+                    printVec3(vertex_array[2]);
+
                 }
                 // // If scaling
                 else if(type == 's')
-                {   
+                {
                     //scale factors
                     Scaling scaling = scalings[transform_id];
                     scale_triangle(vertex_array ,scaling);
@@ -181,10 +181,10 @@ void forwardRenderingPipeline(Camera cam) {
             // c) PERSPECTIVE TRANSFORMATION
             //per_transform(triangle,M_per);
 
-            // d) PERSPECTIVE DIVIDE 
+            // d) PERSPECTIVE DIVIDE
             //per_divide(triangle);
 
-            // Make camera ,perspective transformation and perspective 
+            // Make camera ,perspective transformation and perspective
             // dividing together
 
             per_cam_transform(vertex_array,M_per_cam);
@@ -192,13 +192,13 @@ void forwardRenderingPipeline(Camera cam) {
             printVec3(vertex_array[0]);
             printVec3(vertex_array[1]);
             printVec3(vertex_array[2]);
-            
+
             // // 2) CULLING (Pipeline 3.step)
-                
+
             // // Do culling if backfaced culling is enabled
             if(backfaceCullingSetting == 1)
             {
-                    
+
 
                 if(cull_triangle(vertex_array , cam.pos))
                 {
@@ -209,7 +209,7 @@ void forwardRenderingPipeline(Camera cam) {
                 }
             }
              // 3) VIEWPORT TRANSFORMATION (Pipeline 4.step)
-                
+
                 vp_transform(vertex_array,M_vp);
                 std::cout << "View Port" << std::endl;
                 printVec3(vertex_array[0]);
@@ -220,34 +220,34 @@ void forwardRenderingPipeline(Camera cam) {
 
             // MIDPOINT ALGORITHM
             if(model -> type == 0)
-            {   
-               
+            {
+
                 midpoint(vertex_array);
                  std::cout << "Midpoint" << std::endl;
                 printVec3(vertex_array[0]);
                 printVec3(vertex_array[1]);
                 printVec3(vertex_array[2]);
             }
-                 
-            // IF SOLID FRAME : Use triangle barycentric 
+
+            // IF SOLID FRAME : Use triangle barycentric
             // coordinates to fill triangle's inside
             else if(model -> type == 1)
-            {   
+            {
                 std::cout << "Triangle raster" << std::endl;
                 printVec3(vertex_array[0]);
                 printVec3(vertex_array[1]);
-                printVec3(vertex_array[2]);          
+                printVec3(vertex_array[2]);
                 fill_inside(vertex_array);
             }
 
-            // FINISH HIM                     
+            // FINISH HIM
         }
     }
 }
 
 void translate_triangle(Vec3 vertex_array[3], Translation translation)
-{   
-    
+{
+
     double M[4][4] = {{ 1 ,0 , 0 , translation.tx },
                     {0 , 1 , 0 , translation.ty },
                     {0 , 0 , 1 , translation.tz },
@@ -275,34 +275,34 @@ void translate_triangle(Vec3 vertex_array[3], Translation translation)
     b.x = b_res[0]; b.y = b_res[1]; b.z = b_res[2];
     c.x = c_res[0]; c.y = c_res[1]; c.z = c_res[2];
 
-    // Put transformed vertices 
+    // Put transformed vertices
     vertex_array[0] = a;
     vertex_array[1] = b;
     vertex_array[2] = c;
 }
 // Rotation is little messy. Do it later
 void rotate_triangle(Vec3 vertex_array[3] ,Rotation rotation)
-{   
+{
     // Use alternative method for rotating
     Vec3 u = { rotation.ux , rotation.uy , rotation.uz};
     Vec3 v,w;
     // Make smallest one zero while converting to v
     // if u.x is smallest
-    if(u.x < u.y && u.x < u.z){ 
+    if(abs(u.x) < abs(u.y) && abs(u.x) < abs(u.z)){
         v.x = 0;
-        v.y = u.z ;
+        v.y = -u.z ;
         v.z = u.y;
     }
     // if u.y is smallest
-    else if( u.y < u.z){
+    else if(abs(u.y) < abs(u.z)){
         v.y = 0;
-        v.x = u.z;
+        v.x = -u.z;
         v.z = u.x;
     }
     // if u.z is smallest
     else{
         v.z = 0;
-        v.x = u.y;
+        v.x = -u.y;
         v.y = u.x;
     }
 
@@ -311,8 +311,8 @@ void rotate_triangle(Vec3 vertex_array[3] ,Rotation rotation)
     // normalize v and w
     v = normalizeVec3(v);
     w = normalizeVec3(w);
-    
-  
+
+
 
 
     // Matrix M
@@ -320,7 +320,7 @@ void rotate_triangle(Vec3 vertex_array[3] ,Rotation rotation)
                     { v.x , v.y , v.z , 0 },
                     { w.x , w.y , w.z , 0 },
                     { 0 , 0 , 0 , 1}};
-    // Matrix M^-1 
+    // Matrix M^-1
     double M_reverse[4][4] = { { u.x , v.x , w.x , 0},
                             { u.y , v.y , w.y , 0},
                             { u.z , v.z , w.z , 0},
@@ -349,56 +349,28 @@ void rotate_triangle(Vec3 vertex_array[3] ,Rotation rotation)
     // Multiply each vertex with transformation matrix
     // and store result in dummy arrays
     // Multiply wih  matrix M
-    std::cout << "YARAAK  " << std::endl;
-    for(int i = 0 ; i < 4 ;i ++)
-    {   
-
-        std::cout << a_res[i] << "  " << b_res[i] << "  " << c_res[i] << std::endl;
-    }
     multiplyMatrixWithVec4d(a_res,M,a_h);
     multiplyMatrixWithVec4d(b_res,M,b_h);
     multiplyMatrixWithVec4d(c_res,M,c_h);
-    std::cout << "YARAAK  " << std::endl;
-    for(int i = 0 ; i < 4 ;i ++)
-    {   
-        
-        std::cout << a_res[i] << "  " << b_res[i] << "  " << c_res[i] << std::endl;
-    }
 
     // Perform actual rotation
     multiplyMatrixWithVec4d(a_h,R_x,a_res);
     multiplyMatrixWithVec4d(b_h,R_x,b_res);
     multiplyMatrixWithVec4d(c_h,R_x,c_res);
-    std::cout << "YARAAK  " << std::endl;
-    for(int i = 0 ; i < 4 ;i ++)
-    {   
-        
-        std::cout << a_h[i] << "  " << b_h[i] << "  " << c_h[i] << std::endl;
-    }
 
-  
     // Undo M back
     multiplyMatrixWithVec4d(a_res,M_reverse,a_h);
     multiplyMatrixWithVec4d(b_res,M_reverse,b_h);
     multiplyMatrixWithVec4d(c_res,M_reverse,c_h);
-    
-    std::cout << "YARAAK  " << std::endl;
-    for(int i = 0 ; i < 4 ;i ++)
-    {   
-        
-        std::cout << a_res[i] << "  " << b_res[i] << "  " << c_res[i] << std::endl;
-    }
-
     // crop homogenous parts from result
     a.x = a_res[0]; a.y = a_res[1]; a.z = a_res[2];
     b.x = b_res[0]; b.y = b_res[1]; b.z = b_res[2];
     c.x = c_res[0]; c.y = c_res[1]; c.z = c_res[2];
 
-    // Put transformed vertices 
+    // Put transformed vertices
     vertex_array[0] = a;
     vertex_array[1] = b;
     vertex_array[2] = c;
-      
 
 }
 
@@ -406,7 +378,7 @@ void rotate_triangle(Vec3 vertex_array[3] ,Rotation rotation)
 void scale_triangle(Vec3 vertex_array[3] ,Scaling scaling)
 {   /*
         LOGIC MISTAKE
-        1- TRANSLATE TO ORIGIN 
+        1- TRANSLATE TO ORIGIN
         2- SCALE
         3- TRANSLATE BACK
 
@@ -442,13 +414,13 @@ void scale_triangle(Vec3 vertex_array[3] ,Scaling scaling)
     b.x = b_res[0]; b.y = b_res[1]; b.z = b_res[2];
     c.x = c_res[0]; c.y = c_res[1]; c.z = c_res[2];
 
-    // Put transformed vertices 
+    // Put transformed vertices
     vertex_array[0] = a;
     vertex_array[1] = b;
     vertex_array[2] = c;
 }
 
-// perspective dividing,perspective transformation,camera transformation altogether 
+// perspective dividing,perspective transformation,camera transformation altogether
 void per_cam_transform(Vec3 vertex_array[3] , double M_per_cam[4][4])
 {
     Vec3 a = vertex_array[0];
@@ -471,7 +443,7 @@ void per_cam_transform(Vec3 vertex_array[3] , double M_per_cam[4][4])
     multiplyMatrixWithVec4d(b_res,M_per_cam,b_h);
     multiplyMatrixWithVec4d(c_res,M_per_cam,c_h);
 
-    
+
 
     // Store homogenous parts  for perspective dividing
     double divide_a = a_res[3];
@@ -485,7 +457,7 @@ void per_cam_transform(Vec3 vertex_array[3] , double M_per_cam[4][4])
     b.x = b_res[0] / divide_b; b.y = b_res[1] / divide_b; b.z = b_res[2] / divide_b;
     c.x = c_res[0] / divide_c; c.y = c_res[1] / divide_c; c.z = c_res[2] / divide_c;
 
-    // Put transformed vertices 
+    // Put transformed vertices
     vertex_array[0] = a;
     vertex_array[1] = b;
     vertex_array[2] = c;
@@ -502,7 +474,7 @@ bool cull_triangle(Vec3 vertex_array[3] , Vec3 cam_pos)
     mid.y = (a.y + b.y + c.y) / 3;
     mid.z = (a.z + b.z + c.z) / 3;
     //calculate surface normal of triangle n = (a-mid) X (b- mid)
-    Vec3 surface_normal = crossProductVec3(subtractVec3(a,mid),subtractVec3(b,mid)); 
+    Vec3 surface_normal = crossProductVec3(subtractVec3(a,mid),subtractVec3(b,mid));
 
     if(dotProductVec3(surface_normal,subtractVec3(mid,cam_pos)) > 0 )
         return true;
@@ -535,46 +507,46 @@ void vp_transform(Vec3 vertex_array[3], double M_vp[3][4])
     b.x = b_res[0]; b.y = b_res[1]; b.z = b_res[2];
     c.x = c_res[0]; c.y = c_res[1]; c.z = c_res[2];
 
-    // Put transformed vertices 
+    // Put transformed vertices
     vertex_array[0] = a;
     vertex_array[1] = b;
     vertex_array[2] = c;
 }
 
 void midpoint(Vec3 vertex_array[3])
-{   /*        a 
-              /\  
-             /  \ 
+{   /*        a
+              /\
+             /  \
            b/____\c
-    */       
+    */
    int d,y;
     Vec3 a = vertex_array[0];
     Vec3 b = vertex_array[1];
     Vec3 c = vertex_array[2];
 
     Vec3 triangle_vertices [3] = {a,b,c};
-   
+
 
     for(int j = 0 ; j < 3 ; j++){
         y = triangle_vertices[j].y;
-        d = 2 *  (triangle_vertices[j].y - triangle_vertices[(j+1)%3].y) + triangle_vertices[(j+1)%3].x - triangle_vertices[j].x; 
+        d = (triangle_vertices[j].y - triangle_vertices[(j+1)%3].y) + (0.5) * (triangle_vertices[(j+1)%3].x - triangle_vertices[j].x);
         double c_r = colors[triangle_vertices[j].colorId].r;
         double c_g = colors[triangle_vertices[j].colorId].g;
         double c_b = colors[triangle_vertices[j].colorId].b;
         double dc_r = (colors[triangle_vertices[(j+1)%3].colorId].r - colors[triangle_vertices[j].colorId].r) / (triangle_vertices[(j+1)%3].x-triangle_vertices[j].x);
-        double dc_g = (colors[triangle_vertices[(j+1)%3].colorId].r - colors[triangle_vertices[j].colorId].r) / (triangle_vertices[(j+1)%3].x-triangle_vertices[j].x);
-        double dc_b = (colors[triangle_vertices[(j+1)%3].colorId].r - colors[triangle_vertices[j].colorId].r) / (triangle_vertices[(j+1)%3].x-triangle_vertices[j].x);
+        double dc_g = (colors[triangle_vertices[(j+1)%3].colorId].g - colors[triangle_vertices[j].colorId].g) / (triangle_vertices[(j+1)%3].x-triangle_vertices[j].x);
+        double dc_b = (colors[triangle_vertices[(j+1)%3].colorId].b - colors[triangle_vertices[j].colorId].b) / (triangle_vertices[(j+1)%3].x-triangle_vertices[j].x);
 
-        for(int i = 0 ; i < triangle_vertices[(j+1)%3].x - triangle_vertices[j].x ; i++){
+        for(int i = triangle_vertices[j].x ; i < (int)(triangle_vertices[(j+1)%3].x); i++){
 
             Color color ;
             color.r = make_between_0_255(c_r);
             color.g = make_between_0_255(c_g);
             color.b = make_between_0_255(c_b);
-            image[(int) (triangle_vertices[j].x + 0.5)][(int) (triangle_vertices[j].y + 0.5)] = color;
+            image[i][(int) y] = color;
             if(d < 0){
                 y = y+ 1;
-                d+= triangle_vertices[j].y- triangle_vertices[(j+1)%3].y + triangle_vertices[(j+1)%3].x - triangle_vertices[j].x;
+                d += triangle_vertices[j].y - triangle_vertices[(j+1)%3].y + triangle_vertices[(j+1)%3].x - triangle_vertices[j].x;
             }
             else{
                 d += triangle_vertices[j].y - triangle_vertices[(j+1)%3].y;
@@ -584,7 +556,7 @@ void midpoint(Vec3 vertex_array[3])
             c_b += dc_b;
         }
     }
-    
+
 
 }
 
@@ -624,20 +596,20 @@ void fill_inside(Vec3 vertex_array[3])
     Color color = { 0 , 0 , 0 };
 
     double alpha,beta,gamma;
-    
+
     // For better performance -> temporal localization
     // It is not finished
-    // alpha = (x_min - 1) * (y_1 - y_2) + (y_min - 1) * (x_2 - x_1) + x1_y2 + x2_y1; 
+    // alpha = (x_min - 1) * (y_1 - y_2) + (y_min - 1) * (x_2 - x_1) + x1_y2 + x2_y1;
     // beta =  (x_min - 1) * (y_2 - y_0) + (y_min - 1) * (x_0 - x_2) + x2_y0 + x0_y2;
     // gamma = (x_min - 1) * (y_0 - y_1) + (y_min - 1) * (x_1 - x_0) + x0_y1 + x1_y0;
 
     for(int y = y_min; y < y_max ; y++)
     {
         for(int x = x_min ; x < x_max ; x++)
-        {   
+        {
             alpha = (x + 0.5) * (y_1 - y_2) + (y + 0.5) * (x_2 - x_1) + x1_y2 - x2_y1;
             if(alpha / alpha_triangle < 0)
-                continue;          
+                continue;
             beta = (x + 0.5) * (y_2 - y_0) + (y + 0.5) * (x_0 - x_2) + x2_y0 - x0_y2;
             if(beta / beta_triangle < 0)
                 continue;
@@ -653,7 +625,7 @@ void fill_inside(Vec3 vertex_array[3])
             image[x][y] = color;
         }
     }
-  
+
 }
 
 // Multiplication function for Matrix[3][4] with Vec4d
@@ -682,6 +654,23 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    std::cout << "Rotation" << std::endl;
+    Vec3 array[3] = {{3,5,0},{10,6,0},{1,1,0}};
+    Rotation rt = {60,6,10,0};
+    Translation tr = {-6,2,0};
+    Translation undo = {6,-2,0};
+    translate_triangle(array,tr);
+    printVec3(array[0]);
+    printVec3(array[1]);
+    printVec3(array[2]);
+    rotate_triangle(array,rt);
+    printVec3(array[0]);
+    printVec3(array[1]);
+    printVec3(array[2]);
+    translate_triangle(array,undo);
+    printVec3(array[0]);
+    printVec3(array[1]);
+    printVec3(array[2]);
     // read camera and scene files
     readSceneFile(argv[1]);
     readCameraFile(argv[2]);
@@ -719,7 +708,7 @@ int main(int argc, char **argv) {
         initializeImage(cameras[i]);
 
         // do forward rendering pipeline operations
-        forwardRenderingPipeline(cameras[i]);
+        //forwardRenderingPipeline(cameras[i]);
 
         // generate PPM file
         writeImageToPPMFile(cameras[i]);
