@@ -129,10 +129,6 @@ void forwardRenderingPipeline(Camera cam) {
             for(int k = 0 ; k < model -> numberOfTransformations; k++)
             {
 
-                std::cout << "Before" << std::endl;
-                printVec3(vertex_array[0]);
-                printVec3(vertex_array[1]);
-                printVec3(vertex_array[2]);
                 // transform id of model
                 int transform_id = model -> transformationIDs[k];
                 //transformation type (rotation,scale,translate)
@@ -145,11 +141,6 @@ void forwardRenderingPipeline(Camera cam) {
                     // translation amounts of x,y,z
                     Translation translation = translations[transform_id];
                     translate_triangle(vertex_array,translation);
-                    std::cout << "Translation" << std::endl;
-                    printVec3(vertex_array[0]);
-                    printVec3(vertex_array[1]);
-                    printVec3(vertex_array[2]);
-
                 }
                 // If rotation
                 else if(type == 'r')
@@ -157,11 +148,6 @@ void forwardRenderingPipeline(Camera cam) {
                     //rotation angle, and axis
                     Rotation rotation = rotations[transform_id];
                     rotate_triangle(vertex_array,rotation);
-                    std::cout << "Rotation" << std::endl;
-                    printVec3(vertex_array[0]);
-                    printVec3(vertex_array[1]);
-                    printVec3(vertex_array[2]);
-
                 }
                 // // If scaling
                 else if(type == 's')
@@ -169,10 +155,6 @@ void forwardRenderingPipeline(Camera cam) {
                     //scale factors
                     Scaling scaling = scalings[transform_id];
                     scale_triangle(vertex_array ,scaling);
-                    std::cout << "Scaling" << std::endl;
-                    printVec3(vertex_array[0]);
-                    printVec3(vertex_array[1]);
-                    printVec3(vertex_array[2]);
                 }
             }
             // b) CAMERA TRANSFORMATION
@@ -188,10 +170,6 @@ void forwardRenderingPipeline(Camera cam) {
             // dividing together
 
             per_cam_transform(vertex_array,M_per_cam);
-            std::cout << "percamtra" << std::endl;
-            printVec3(vertex_array[0]);
-            printVec3(vertex_array[1]);
-            printVec3(vertex_array[2]);
 
             // // 2) CULLING (Pipeline 3.step)
 
@@ -211,35 +189,21 @@ void forwardRenderingPipeline(Camera cam) {
              // 3) VIEWPORT TRANSFORMATION (Pipeline 4.step)
 
                 vp_transform(vertex_array,M_vp);
-                std::cout << "View Port" << std::endl;
-                printVec3(vertex_array[0]);
-                printVec3(vertex_array[1]);
-                printVec3(vertex_array[2]);
 
             // 4) TRIANGLE RASTERIZATION (Pipeline 5.step)
 
             // MIDPOINT ALGORITHM
-            if(model -> type == 1)
+            if(model -> type == 0)
             {
-
                 midpoint(vertex_array);
-                 std::cout << "Midpoint" << std::endl;
-                printVec3(vertex_array[0]);
-                printVec3(vertex_array[1]);
-                printVec3(vertex_array[2]);
             }
 
             // IF SOLID FRAME : Use triangle barycentric
             // coordinates to fill triangle's inside
-            else if(model -> type == 0)
+            else if(model -> type == 1)
             {
-                std::cout << "Triangle raster" << std::endl;
-                printVec3(vertex_array[0]);
-                printVec3(vertex_array[1]);
-                printVec3(vertex_array[2]);
                 fill_inside(vertex_array);
             }
-
             // FINISH HIM
         }
     }
@@ -529,7 +493,9 @@ void midpoint(Vec3 vertex_array[3])
              /  \
            b/____\c
     */
-   int d,y;
+    // They should be double
+    // We didn't round yet
+    double d,y;
     Vec3 a = vertex_array[0];
     Vec3 b = vertex_array[1];
     Vec3 c = vertex_array[2];
@@ -547,17 +513,18 @@ void midpoint(Vec3 vertex_array[3])
         double dc_g = (colors[triangle_vertices[(j+1)%3].colorId].g - colors[triangle_vertices[j].colorId].g) / (triangle_vertices[(j+1)%3].x-triangle_vertices[j].x);
         double dc_b = (colors[triangle_vertices[(j+1)%3].colorId].b - colors[triangle_vertices[j].colorId].b) / (triangle_vertices[(j+1)%3].x-triangle_vertices[j].x);
 
-        for(int i = triangle_vertices[j].x ; i < (int)(triangle_vertices[(j+1)%3].x); i++){
-
+        for(int i = (int) triangle_vertices[j].x ; i < (int)(triangle_vertices[(j+1)%3].x); i++){
             Color color ;
             color.r = make_between_0_255(c_r);
             color.g = make_between_0_255(c_g);
             color.b = make_between_0_255(c_b);
             image[i][(int) y] = color;
+            // Go right up
             if(d < 0){
                 y = y+ 1;
                 d += triangle_vertices[j].y - triangle_vertices[(j+1)%3].y + triangle_vertices[(j+1)%3].x - triangle_vertices[j].x;
             }
+            // Go right
             else{
                 d += triangle_vertices[j].y - triangle_vertices[(j+1)%3].y;
             }
