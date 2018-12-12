@@ -176,8 +176,6 @@ void forwardRenderingPipeline(Camera cam) {
             // // Do culling if backfaced culling is enabled
             if(backfaceCullingSetting == 1)
             {
-
-
                 if(cull_triangle(vertex_array , cam.pos))
                 {
                     // Pass triangle
@@ -450,7 +448,7 @@ bool cull_triangle(Vec3 vertex_array[3] , Vec3 cam_pos)
     //calculate surface normal of triangle n = (a-mid) X (b- mid)
     Vec3 surface_normal = crossProductVec3(subtractVec3(a,mid),subtractVec3(b,mid));
 
-    if(dotProductVec3(surface_normal,subtractVec3(mid,cam_pos)) > 0 )
+    if(dotProductVec3(surface_normal,subtractVec3(mid,cam_pos)) <= 0 )
         return true;
     else
         return false;
@@ -533,7 +531,7 @@ void midpoint(Vec3 vertex_array[3])
                 c_r += dc_r;
                 c_g += dc_g;
                 c_b += dc_b;
-                }
+            }
         }
         else if(ratio> 1  && ratio < INFINITY ){
             x = triangle_vertices[j].x;
@@ -562,7 +560,7 @@ void midpoint(Vec3 vertex_array[3])
                 c_r += dc_r;
                 c_g += dc_g;
                 c_b += dc_b;
-                }
+            }
         }
         else if(ratio < -1 && ratio > - INFINITY){
             x = triangle_vertices[j].x;
@@ -591,7 +589,7 @@ void midpoint(Vec3 vertex_array[3])
                 c_r += dc_r;
                 c_g += dc_g;
                 c_b += dc_b;
-                }
+            }
         }
         else if (ratio > -1 && ratio < 0){
             y = triangle_vertices[j].y;
@@ -621,7 +619,7 @@ void midpoint(Vec3 vertex_array[3])
                 c_r += dc_r;
                 c_g += dc_g;
                 c_b += dc_b;
-                }
+            }
         }
         
     }
