@@ -47,7 +47,8 @@ void scale_triangle(Vec3 vertex_array[3], Scaling scaling);
 //void per_transform(Triangle *triangle, double M_per_cam[4][4]);
 void per_cam_transform(Vec3 vertex_array[3], double M_per_cam[4][4]);
 //void per_divide(Triangle *triangle);
-bool cull_triangle(Vec3 vertex_array[3],Vec3 cam_pos);
+bool cull_solid_triangle(Vec3 vertex_array[3],Vec3 cam_pos);
+bool cull_wire_triangle(Vec3 vertex_array[3],Vec3 cam_pos);
 void vp_transform(Vec3 vertex_array[3], double M_vp[3][4]);
 void midpoint(Vec3 vertex_array[3]);
 void fill_inside(Vec3 vertex_array[3]);
@@ -175,14 +176,25 @@ void forwardRenderingPipeline(Camera cam) {
 
             // // Do culling if backfaced culling is enabled
             if(backfaceCullingSetting == 1)
-            {
-                if(cull_triangle(vertex_array , cam.pos))
+            {   
+                if(model -> type == 1)
                 {
-                    // Pass triangle
-                    // Don't draw
-                    std::cout << "Culled" << std::endl;
-                    continue;
+                    if(cull_solid_triangle(vertex_array, cam.pos))
+                    {
+                        continue;
+                    }
                 }
+                else{
+                    if(cull_wire_triangle(vertex_array , cam.pos))
+                    { 
+                        // Pass triangle
+                        // Don't draw
+                        continue;
+                    }
+                
+                
+                }
+               
             }
              // 3) VIEWPORT TRANSFORMATION (Pipeline 4.step)
 
@@ -435,7 +447,7 @@ void per_cam_transform(Vec3 vertex_array[3] , double M_per_cam[4][4])
     vertex_array[2] = c;
 }
 
-bool cull_triangle(Vec3 vertex_array[3] , Vec3 cam_pos)
+bool cull_solid_triangle(Vec3 vertex_array[3] , Vec3 cam_pos)
 {
     Vec3 a = vertex_array[0];
     Vec3 b = vertex_array[1];
@@ -448,7 +460,26 @@ bool cull_triangle(Vec3 vertex_array[3] , Vec3 cam_pos)
     //calculate surface normal of triangle n = (a-mid) X (b- mid)
     Vec3 surface_normal = crossProductVec3(subtractVec3(a,mid),subtractVec3(b,mid));
 
-    if(dotProductVec3(surface_normal,subtractVec3(mid,cam_pos)) <= 0 )
+    if(dotProductVec3(surface_normal,subtractVec3(mid,cam_pos)) > 0.0001 )
+        return true;
+    else
+        return false;
+}
+
+bool cull_wire_triangle(Vec3 vertex_array[3] , Vec3 cam_pos)
+{
+    Vec3 a = vertex_array[0];
+    Vec3 b = vertex_array[1];
+    Vec3 c = vertex_array[2];
+
+    Vec3 mid; // find middle point coordinates of the given triangle
+    mid.x = (a.x + b.x + c.x) / 3;
+    mid.y = (a.y + b.y + c.y) / 3;
+    mid.z = (a.z + b.z + c.z) / 3;
+    //calculate surface normal of triangle n = (a-mid) X (b- mid)
+    Vec3 surface_normal = crossProductVec3(subtractVec3(a,mid),subtractVec3(b,mid));
+
+    if(dotProductVec3(surface_normal,subtractVec3(mid,cam_pos)) < 0)
         return true;
     else
         return false;
@@ -499,7 +530,7 @@ void midpoint(Vec3 vertex_array[3])
     Vec3 c = vertex_array[2];
 
     Vec3 triangle_vertices [3] = {a,b,c};
-
+    Vec3 triangle_verticesx [3] = {c,b,a};
 
     for(int j = 0 ; j < 3 ; j++){
         double ratio = (triangle_vertices[(j+1)%3].y - triangle_vertices[j].y) / (triangle_vertices[(j+1)%3].x - triangle_vertices[j].x );
@@ -620,6 +651,132 @@ void midpoint(Vec3 vertex_array[3])
                 c_g += dc_g;
                 c_b += dc_b;
             }
+        }
+        
+    }
+
+
+
+    
+    for(int j = 0 ; j < 3 ; j++){
+        double ratio = (triangle_verticesx[(j+1)%3].y - triangle_verticesx[j].y) / (triangle_verticesx[(j+1)%3].x - triangle_verticesx[j].x );
+        if( ratio <= 1  && ratio > 0 ){
+            y = triangle_verticesx[j].y;
+            d = (triangle_verticesx[j].y - triangle_verticesx[(j+1)%3].y) + (0.5) * (triangle_verticesx[(j+1)%3].x - triangle_verticesx[j].x);
+            double c_r = colors[triangle_verticesx[j].colorId].r;
+            double c_g = colors[triangle_verticesx[j].colorId].g;
+            double c_b = colors[triangle_verticesx[j].colorId].b;
+            double dc_r = (colors[triangle_verticesx[(j+1)%3].colorId].r - colors[triangle_verticesx[j].colorId].r) / (triangle_verticesx[(j+1)%3].x-triangle_verticesx[j].x);
+            double dc_g = (colors[triangle_verticesx[(j+1)%3].colorId].g - colors[triangle_verticesx[j].colorId].g) / (triangle_verticesx[(j+1)%3].x-triangle_verticesx[j].x);
+            double dc_b = (colors[triangle_verticesx[(j+1)%3].colorId].b - colors[triangle_verticesx[j].colorId].b) / (triangle_verticesx[(j+1)%3].x-triangle_verticesx[j].x);
+
+            for(int i = (int) triangle_verticesx[j].x ; i < (int)(triangle_verticesx[(j+1)%3].x); i++){
+                Color color ;
+                color.r = make_between_0_255(c_r);
+                color.g = make_between_0_255(c_g);
+                color.b = make_between_0_255(c_b);
+                image[i][(int) y] = color;
+                // NE
+                if(d < 0){
+                    y = y+ 1;
+                    d += triangle_verticesx[j].y - triangle_verticesx[(j+1)%3].y + triangle_verticesx[(j+1)%3].x - triangle_verticesx[j].x;
+                }
+                // E
+                else{
+                    d += triangle_verticesx[j].y - triangle_verticesx[(j+1)%3].y;
+                }
+                c_r += dc_r;
+                c_g += dc_g;
+                c_b += dc_b;
+                }
+        }
+        else if(ratio> 1  && ratio < INFINITY ){
+            x = triangle_verticesx[j].x;
+            d = triangle_verticesx[(j+1)%3].x - triangle_verticesx[j].x + (0.5)* (triangle_verticesx[j].y - triangle_verticesx[(j+1)%3].y);
+            double c_r = colors[triangle_verticesx[j].colorId].r;
+            double c_g = colors[triangle_verticesx[j].colorId].g;
+            double c_b = colors[triangle_verticesx[j].colorId].b;
+            double dc_r = (colors[triangle_verticesx[(j+1)%3].colorId].r - colors[triangle_verticesx[j].colorId].r) / (triangle_verticesx[(j+1)%3].y-triangle_verticesx[j].y);
+            double dc_g = (colors[triangle_verticesx[(j+1)%3].colorId].g - colors[triangle_verticesx[j].colorId].g) / (triangle_verticesx[(j+1)%3].y-triangle_verticesx[j].y);
+            double dc_b = (colors[triangle_verticesx[(j+1)%3].colorId].b - colors[triangle_verticesx[j].colorId].b) / (triangle_verticesx[(j+1)%3].y-triangle_verticesx[j].y);
+            for(int i = (int) triangle_verticesx[j].y ; i < (int)(triangle_verticesx[(j+1)%3].y); i++){
+                Color color ;
+                color.r = make_between_0_255(c_r);
+                color.g = make_between_0_255(c_g);
+                color.b = make_between_0_255(c_b);
+                image[(int)x][ i] = color;
+                // NE
+                if(d > 0){
+                    x = x+ 1;
+                    d += triangle_verticesx[j].y - triangle_verticesx[(j+1)%3].y + triangle_verticesx[(j+1)%3].x - triangle_verticesx[j].x;
+                }
+                // N
+                else{
+                    d += triangle_verticesx[(j+1)%3].x-triangle_verticesx[j].x ;
+                }
+                c_r += dc_r;
+                c_g += dc_g;
+                c_b += dc_b;
+                }
+        }
+        else if(ratio < -1 && ratio > - INFINITY){
+            x = triangle_verticesx[j].x;
+            d = triangle_verticesx[(j+1)%3].x - triangle_verticesx[j].x - (0.5)* (triangle_verticesx[j].y - triangle_verticesx[(j+1)%3].y);
+            double c_r = colors[triangle_verticesx[j].colorId].r;
+            double c_g = colors[triangle_verticesx[j].colorId].g;
+            double c_b = colors[triangle_verticesx[j].colorId].b;
+            double dc_r = (colors[triangle_verticesx[(j+1)%3].colorId].r - colors[triangle_verticesx[j].colorId].r) / (triangle_verticesx[(j+1)%3].y-triangle_verticesx[j].y);
+            double dc_g = (colors[triangle_verticesx[(j+1)%3].colorId].g - colors[triangle_verticesx[j].colorId].g) / (triangle_verticesx[(j+1)%3].y-triangle_verticesx[j].y);
+            double dc_b = (colors[triangle_verticesx[(j+1)%3].colorId].b - colors[triangle_verticesx[j].colorId].b) / (triangle_verticesx[(j+1)%3].y-triangle_verticesx[j].y);
+            for(int i = (int) triangle_verticesx[j].y ; i < (int)(triangle_verticesx[(j+1)%3].y); i++){
+                Color color ;
+                color.r = make_between_0_255(c_r);
+                color.g = make_between_0_255(c_g);
+                color.b = make_between_0_255(c_b);
+                image[(int)x][i] = color;
+                // NW
+                if(d < 0){
+                    x = x- 1;
+                    d +=   triangle_verticesx[(j+1)%3].x - triangle_verticesx[j].x  - (triangle_verticesx[j].y - triangle_verticesx[(j+1)%3].y) ;
+                }
+                // N
+                else{
+                    d += triangle_verticesx[(j+1)%3].x-triangle_verticesx[j].x ;
+                }
+                c_r += dc_r;
+                c_g += dc_g;
+                c_b += dc_b;
+                }
+        }
+        else if (ratio > -1 && ratio < 0){
+            y = triangle_verticesx[j].y;
+            d = -(triangle_verticesx[j].y - triangle_verticesx[(j+1)%3].y) + (0.5) * (triangle_verticesx[(j+1)%3].x - triangle_verticesx[j].x);
+            double c_r = colors[triangle_verticesx[j].colorId].r;
+            double c_g = colors[triangle_verticesx[j].colorId].g;
+            double c_b = colors[triangle_verticesx[j].colorId].b;
+            double dc_r = (colors[triangle_verticesx[(j+1)%3].colorId].r - colors[triangle_verticesx[j].colorId].r) / (triangle_verticesx[(j+1)%3].x-triangle_verticesx[j].x);
+            double dc_g = (colors[triangle_verticesx[(j+1)%3].colorId].g - colors[triangle_verticesx[j].colorId].g) / (triangle_verticesx[(j+1)%3].x-triangle_verticesx[j].x);
+            double dc_b = (colors[triangle_verticesx[(j+1)%3].colorId].b - colors[triangle_verticesx[j].colorId].b) / (triangle_verticesx[(j+1)%3].x-triangle_verticesx[j].x);
+
+            for(int i = (int) triangle_verticesx[j].x ; i < (int)(triangle_verticesx[(j+1)%3].x); i++){
+                Color color ;
+                color.r = make_between_0_255(c_r);
+                color.g = make_between_0_255(c_g);
+                color.b = make_between_0_255(c_b);
+                image[i][(int) y] = color;
+                // NW
+                if(d < 0){
+                    y = y - 1;
+                    d +=  triangle_verticesx[(j+1)%3].x - triangle_verticesx[j].x - (triangle_verticesx[j].y - triangle_verticesx[(j+1)%3].y);
+                }
+                // W
+                else{
+                    d += triangle_verticesx[(j+1)%3].y -triangle_verticesx[j].y  ;
+                }
+                c_r += dc_r;
+                c_g += dc_g;
+                c_b += dc_b;
+                }
         }
         
     }
