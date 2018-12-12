@@ -442,9 +442,9 @@ bool cull_triangle(Vec3 vertex_array[3] , Vec3 cam_pos)
     mid.y = (a.y + b.y + c.y) / 3;
     mid.z = (a.z + b.z + c.z) / 3;
     //calculate surface normal of triangle n = (a-mid) X (b- mid)
-    Vec3 surface_normal = crossProductVec3(subtractVec3(a,mid),subtractVec3(b,mid));
+    Vec3 surface_normal = crossProductVec3(subtractVec3(b,a),subtractVec3(c,a));
 
-    if(dotProductVec3(surface_normal,subtractVec3(mid,cam_pos)) > 0 )
+    if(dotProductVec3(surface_normal,a) < 0 )
         return true;
     else
         return false;
