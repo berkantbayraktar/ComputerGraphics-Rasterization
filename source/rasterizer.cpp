@@ -47,8 +47,7 @@ void scale_triangle(Vec3 vertex_array[3], Scaling scaling);
 //void per_transform(Triangle *triangle, double M_per_cam[4][4]);
 void per_cam_transform(Vec3 vertex_array[3], double M_per_cam[4][4]);
 //void per_divide(Triangle *triangle);
-bool cull_solid_triangle(Vec3 vertex_array[3],Vec3 cam_pos);
-bool cull_wire_triangle(Vec3 vertex_array[3],Vec3 cam_pos);
+bool cull_triangle(Vec3 vertex_array[3],Vec3 cam_pos);
 void vp_transform(Vec3 vertex_array[3], double M_vp[3][4]);
 void midpoint(Vec3 vertex_array[3]);
 void fill_inside(Vec3 vertex_array[3]);
@@ -177,28 +176,13 @@ void forwardRenderingPipeline(Camera cam) {
             // // Do culling if backfaced culling is enabled
             if(backfaceCullingSetting == 1)
             {   
-                if(model -> type == 1)
-                {
-                    if(cull_solid_triangle(vertex_array, cam.pos))
-                    {
-                        continue;
-                    }
-                }
-                else{
-                    if(cull_wire_triangle(vertex_array , cam.pos))
-                    { 
-                        // Pass triangle
-                        // Don't draw
-                        continue;
-                    }
-                
-                
-                }
+                if(cull_triangle(vertex_array,cam.pos))
+                    continue;
                
             }
              // 3) VIEWPORT TRANSFORMATION (Pipeline 4.step)
 
-                vp_transform(vertex_array,M_vp);
+            vp_transform(vertex_array,M_vp);
 
             // 4) TRIANGLE RASTERIZATION (Pipeline 5.step)
 
@@ -447,7 +431,7 @@ void per_cam_transform(Vec3 vertex_array[3] , double M_per_cam[4][4])
     vertex_array[2] = c;
 }
 
-bool cull_solid_triangle(Vec3 vertex_array[3] , Vec3 cam_pos)
+bool cull_triangle(Vec3 vertex_array[3] , Vec3 cam_pos)
 {
     Vec3 a = vertex_array[0];
     Vec3 b = vertex_array[1];
@@ -460,30 +444,12 @@ bool cull_solid_triangle(Vec3 vertex_array[3] , Vec3 cam_pos)
     //calculate surface normal of triangle n = (a-mid) X (b- mid)
     Vec3 surface_normal = crossProductVec3(subtractVec3(a,mid),subtractVec3(b,mid));
 
-    if(dotProductVec3(surface_normal,subtractVec3(mid,cam_pos)) > 0.0001 )
+    if(dotProductVec3(surface_normal,subtractVec3(mid,cam_pos)) > 0 )
         return true;
     else
         return false;
 }
 
-bool cull_wire_triangle(Vec3 vertex_array[3] , Vec3 cam_pos)
-{
-    Vec3 a = vertex_array[0];
-    Vec3 b = vertex_array[1];
-    Vec3 c = vertex_array[2];
-
-    Vec3 mid; // find middle point coordinates of the given triangle
-    mid.x = (a.x + b.x + c.x) / 3;
-    mid.y = (a.y + b.y + c.y) / 3;
-    mid.z = (a.z + b.z + c.z) / 3;
-    //calculate surface normal of triangle n = (a-mid) X (b- mid)
-    Vec3 surface_normal = crossProductVec3(subtractVec3(a,mid),subtractVec3(b,mid));
-
-    if(dotProductVec3(surface_normal,subtractVec3(mid,cam_pos)) < 0)
-        return true;
-    else
-        return false;
-}
 
 // NO PROBLEM
 void vp_transform(Vec3 vertex_array[3], double M_vp[3][4])
