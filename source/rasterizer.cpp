@@ -495,7 +495,7 @@ void midpoint(Vec3 vertex_array[3])
     */
     // They should be double
     // We didn't round yet
-    double d,y;
+    double d,y,x;
     Vec3 a = vertex_array[0];
     Vec3 b = vertex_array[1];
     Vec3 c = vertex_array[2];
@@ -504,34 +504,126 @@ void midpoint(Vec3 vertex_array[3])
 
 
     for(int j = 0 ; j < 3 ; j++){
-        y = triangle_vertices[j].y;
-        d = (triangle_vertices[j].y - triangle_vertices[(j+1)%3].y) + (0.5) * (triangle_vertices[(j+1)%3].x - triangle_vertices[j].x);
-        double c_r = colors[triangle_vertices[j].colorId].r;
-        double c_g = colors[triangle_vertices[j].colorId].g;
-        double c_b = colors[triangle_vertices[j].colorId].b;
-        double dc_r = (colors[triangle_vertices[(j+1)%3].colorId].r - colors[triangle_vertices[j].colorId].r) / (triangle_vertices[(j+1)%3].x-triangle_vertices[j].x);
-        double dc_g = (colors[triangle_vertices[(j+1)%3].colorId].g - colors[triangle_vertices[j].colorId].g) / (triangle_vertices[(j+1)%3].x-triangle_vertices[j].x);
-        double dc_b = (colors[triangle_vertices[(j+1)%3].colorId].b - colors[triangle_vertices[j].colorId].b) / (triangle_vertices[(j+1)%3].x-triangle_vertices[j].x);
+        double ratio = (triangle_vertices[(j+1)%3].y - triangle_vertices[j].y) / (triangle_vertices[(j+1)%3].x - triangle_vertices[j].x );
+        if( ratio <= 1  && ratio > 0 ){
+            y = triangle_vertices[j].y;
+            d = (triangle_vertices[j].y - triangle_vertices[(j+1)%3].y) + (0.5) * (triangle_vertices[(j+1)%3].x - triangle_vertices[j].x);
+            double c_r = colors[triangle_vertices[j].colorId].r;
+            double c_g = colors[triangle_vertices[j].colorId].g;
+            double c_b = colors[triangle_vertices[j].colorId].b;
+            double dc_r = (colors[triangle_vertices[(j+1)%3].colorId].r - colors[triangle_vertices[j].colorId].r) / (triangle_vertices[(j+1)%3].x-triangle_vertices[j].x);
+            double dc_g = (colors[triangle_vertices[(j+1)%3].colorId].g - colors[triangle_vertices[j].colorId].g) / (triangle_vertices[(j+1)%3].x-triangle_vertices[j].x);
+            double dc_b = (colors[triangle_vertices[(j+1)%3].colorId].b - colors[triangle_vertices[j].colorId].b) / (triangle_vertices[(j+1)%3].x-triangle_vertices[j].x);
 
-        for(int i = (int) triangle_vertices[j].x ; i < (int)(triangle_vertices[(j+1)%3].x); i++){
-            Color color ;
-            color.r = make_between_0_255(c_r);
-            color.g = make_between_0_255(c_g);
-            color.b = make_between_0_255(c_b);
-            image[i][(int) y] = color;
-            // Go right up
-            if(d < 0){
-                y = y+ 1;
-                d += triangle_vertices[j].y - triangle_vertices[(j+1)%3].y + triangle_vertices[(j+1)%3].x - triangle_vertices[j].x;
-            }
-            // Go right
-            else{
-                d += triangle_vertices[j].y - triangle_vertices[(j+1)%3].y;
-            }
-            c_r += dc_r;
-            c_g += dc_g;
-            c_b += dc_b;
+            for(int i = (int) triangle_vertices[j].x ; i < (int)(triangle_vertices[(j+1)%3].x); i++){
+                Color color ;
+                color.r = make_between_0_255(c_r);
+                color.g = make_between_0_255(c_g);
+                color.b = make_between_0_255(c_b);
+                image[i][(int) y] = color;
+                // NE
+                if(d < 0){
+                    y = y+ 1;
+                    d += triangle_vertices[j].y - triangle_vertices[(j+1)%3].y + triangle_vertices[(j+1)%3].x - triangle_vertices[j].x;
+                }
+                // E
+                else{
+                    d += triangle_vertices[j].y - triangle_vertices[(j+1)%3].y;
+                }
+                c_r += dc_r;
+                c_g += dc_g;
+                c_b += dc_b;
+                }
         }
+        else if(ratio> 1  && ratio < INFINITY ){
+            x = triangle_vertices[j].x;
+            d = triangle_vertices[(j+1)%3].x - triangle_vertices[j].x + (0.5)* (triangle_vertices[j].y - triangle_vertices[(j+1)%3].y);
+            double c_r = colors[triangle_vertices[j].colorId].r;
+            double c_g = colors[triangle_vertices[j].colorId].g;
+            double c_b = colors[triangle_vertices[j].colorId].b;
+            double dc_r = (colors[triangle_vertices[(j+1)%3].colorId].r - colors[triangle_vertices[j].colorId].r) / (triangle_vertices[(j+1)%3].y-triangle_vertices[j].y);
+            double dc_g = (colors[triangle_vertices[(j+1)%3].colorId].g - colors[triangle_vertices[j].colorId].g) / (triangle_vertices[(j+1)%3].y-triangle_vertices[j].y);
+            double dc_b = (colors[triangle_vertices[(j+1)%3].colorId].b - colors[triangle_vertices[j].colorId].b) / (triangle_vertices[(j+1)%3].y-triangle_vertices[j].y);
+            for(int i = (int) triangle_vertices[j].y ; i < (int)(triangle_vertices[(j+1)%3].y); i++){
+                Color color ;
+                color.r = make_between_0_255(c_r);
+                color.g = make_between_0_255(c_g);
+                color.b = make_between_0_255(c_b);
+                image[(int)x][ i] = color;
+                // NE
+                if(d > 0){
+                    x = x+ 1;
+                    d += triangle_vertices[j].y - triangle_vertices[(j+1)%3].y + triangle_vertices[(j+1)%3].x - triangle_vertices[j].x;
+                }
+                // N
+                else{
+                    d += triangle_vertices[(j+1)%3].x-triangle_vertices[j].x ;
+                }
+                c_r += dc_r;
+                c_g += dc_g;
+                c_b += dc_b;
+                }
+        }
+        else if(ratio < -1 && ratio > - INFINITY){
+            x = triangle_vertices[j].x;
+            d = triangle_vertices[(j+1)%3].x - triangle_vertices[j].x - (0.5)* (triangle_vertices[j].y - triangle_vertices[(j+1)%3].y);
+            double c_r = colors[triangle_vertices[j].colorId].r;
+            double c_g = colors[triangle_vertices[j].colorId].g;
+            double c_b = colors[triangle_vertices[j].colorId].b;
+            double dc_r = (colors[triangle_vertices[(j+1)%3].colorId].r - colors[triangle_vertices[j].colorId].r) / (triangle_vertices[(j+1)%3].y-triangle_vertices[j].y);
+            double dc_g = (colors[triangle_vertices[(j+1)%3].colorId].g - colors[triangle_vertices[j].colorId].g) / (triangle_vertices[(j+1)%3].y-triangle_vertices[j].y);
+            double dc_b = (colors[triangle_vertices[(j+1)%3].colorId].b - colors[triangle_vertices[j].colorId].b) / (triangle_vertices[(j+1)%3].y-triangle_vertices[j].y);
+            for(int i = (int) triangle_vertices[j].y ; i < (int)(triangle_vertices[(j+1)%3].y); i++){
+                Color color ;
+                color.r = make_between_0_255(c_r);
+                color.g = make_between_0_255(c_g);
+                color.b = make_between_0_255(c_b);
+                image[(int)x][i] = color;
+                // NW
+                if(d < 0){
+                    x = x- 1;
+                    d +=   triangle_vertices[(j+1)%3].x - triangle_vertices[j].x  - (triangle_vertices[j].y - triangle_vertices[(j+1)%3].y) ;
+                }
+                // N
+                else{
+                    d += triangle_vertices[(j+1)%3].x-triangle_vertices[j].x ;
+                }
+                c_r += dc_r;
+                c_g += dc_g;
+                c_b += dc_b;
+                }
+        }
+        else if (ratio > -1 && ratio < 0){
+            y = triangle_vertices[j].y;
+            d = -(triangle_vertices[j].y - triangle_vertices[(j+1)%3].y) + (0.5) * (triangle_vertices[(j+1)%3].x - triangle_vertices[j].x);
+            double c_r = colors[triangle_vertices[j].colorId].r;
+            double c_g = colors[triangle_vertices[j].colorId].g;
+            double c_b = colors[triangle_vertices[j].colorId].b;
+            double dc_r = (colors[triangle_vertices[(j+1)%3].colorId].r - colors[triangle_vertices[j].colorId].r) / (triangle_vertices[(j+1)%3].x-triangle_vertices[j].x);
+            double dc_g = (colors[triangle_vertices[(j+1)%3].colorId].g - colors[triangle_vertices[j].colorId].g) / (triangle_vertices[(j+1)%3].x-triangle_vertices[j].x);
+            double dc_b = (colors[triangle_vertices[(j+1)%3].colorId].b - colors[triangle_vertices[j].colorId].b) / (triangle_vertices[(j+1)%3].x-triangle_vertices[j].x);
+
+            for(int i = (int) triangle_vertices[j].x ; i < (int)(triangle_vertices[(j+1)%3].x); i++){
+                Color color ;
+                color.r = make_between_0_255(c_r);
+                color.g = make_between_0_255(c_g);
+                color.b = make_between_0_255(c_b);
+                image[i][(int) y] = color;
+                // NW
+                if(d < 0){
+                    y = y - 1;
+                    d +=  triangle_vertices[(j+1)%3].x - triangle_vertices[j].x - (triangle_vertices[j].y - triangle_vertices[(j+1)%3].y);
+                }
+                // W
+                else{
+                    d += triangle_vertices[(j+1)%3].y -triangle_vertices[j].y  ;
+                }
+                c_r += dc_r;
+                c_g += dc_g;
+                c_b += dc_b;
+                }
+        }
+        
     }
 
 
